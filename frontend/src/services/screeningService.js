@@ -16,10 +16,11 @@ export const screeningService = {
     /**
      * Submit answer and get AI empathy response
      */
-    submitAnswer: async (sessionId, questionId, optionId) => {
+    submitAnswer: async (sessionId, questionId, optionId, score) => {
         const response = await apiClient.post(`/screening/sessions/${sessionId}/answer`, {
             question_id: questionId,
-            option_id: optionId
+            option_id: optionId,
+            score: score
         });
         return response.data;
     },

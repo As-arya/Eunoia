@@ -225,11 +225,12 @@ const ChatPage = ({ onBack, onHistory, onSessionComplete }) => {
         }])
 
         try {
-            // Submit answer
+            // Submit answer with score
             const answerResult = await screeningService.submitAnswer(
                 sessionId,
                 currentQuestion.id,
-                selectedOption
+                selectedOption,
+                selectedOptionData.score  // Include the score
             )
 
             // Get next question
