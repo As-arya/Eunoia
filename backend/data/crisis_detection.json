@@ -1,0 +1,84 @@
+{
+    "crisis_keywords": {
+        "high_risk": {
+            "keywords": [
+                "bunuh diri",
+                "suicide",
+                "mengakhiri hidup",
+                "mati saja",
+                "tidak ingin hidup",
+                "ingin mati",
+                "lebih baik mati",
+                "akan bunuh diri",
+                "rencana bunuh diri",
+                "cara bunuh diri",
+                "cutting",
+                "self harm",
+                "menyakiti diri",
+                "melukai diri"
+            ],
+            "immediate_action": "crisis_protocol"
+        },
+        "moderate_risk": {
+            "keywords": [
+                "putus asa",
+                "hopeless",
+                "tidak ada harapan",
+                "hampa",
+                "tidak berguna",
+                "beban",
+                "menyerah",
+                "lelah hidup",
+                "tidak kuat lagi",
+                "cape hidup",
+                "pengen hilang"
+            ],
+            "action": "safety_assessment"
+        },
+        "emotional_distress": {
+            "keywords": [
+                "sangat sedih",
+                "depresi",
+                "panik",
+                "cemas berat",
+                "breakdown",
+                "tidak sanggup",
+                "overwhelmed banget"
+            ],
+            "action": "enhanced_support"
+        }
+    },
+    "crisis_responses": {
+        "immediate_safety": {
+            "response": "Terima kasih sudah menceritakan ini padaku. Keselamatanmu adalah prioritas utama. Aku perlu tahu - apakah kamu aman sekarang?\n\n🆘 Jika dalam bahaya, segera hubungi:\n• Hotline Kesehatan Jiwa: 119 ext 8 (24 jam)\n• Indonesia Suicide Hotline: 021-500-454\n• WhatsApp Yayasan Pulih: +62 811-1711-555\n\nJangan sendirian.",
+            "escalation": true
+        },
+        "supportive_exploration": {
+            "response": "Aku mendengar bahwa kamu sedang merasakan hal yang sangat berat. Perasaan putus asa itu menyakitkan. Boleh kamu ceritakan lebih banyak tentang apa yang kamu rasakan?",
+            "validate": true
+        }
+    },
+    "crisis_resources": {
+        "Indonesia": [
+            {
+                "name": "Hotline Kesehatan Jiwa",
+                "number": "119 ext 8",
+                "availability": "24/7"
+            },
+            {
+                "name": "Indonesia Suicide Hotline",
+                "number": "021-500-454",
+                "availability": "24/7"
+            },
+            {
+                "name": "Yayasan Pulih",
+                "whatsapp": "+62 811-1711-555",
+                "availability": "Mon-Fri 09:00-17:00 WIB"
+            },
+            {
+                "name": "Into the Light Indonesia",
+                "website": "www.intothelightid.org"
+            }
+        ]
+    }
+}

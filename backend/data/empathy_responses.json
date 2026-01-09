@@ -1,0 +1,182 @@
+{
+    "Happy": [
+        {
+            "response": "Senang sekali mendengarnya! Kamu terlihat bersemangat hari ini. Apa yang membuat harimu spesial?",
+            "follow_up": true,
+            "intensity": "high",
+            "empathy_type": "cognitive"
+        },
+        {
+            "response": "Wah, energi positifmu terasa! Semoga kebahagiaan ini terus berlanjut ya. 🌟",
+            "follow_up": false,
+            "intensity": "medium",
+            "empathy_type": "affective"
+        },
+        {
+            "response": "Wah, mantap! Cerita dong, apa yang bikin kamu happy? Aku senang dengarnya!",
+            "follow_up": true,
+            "intensity": "high",
+            "empathy_type": "emotional_contagion"
+        }
+    ],
+    "Anxious": [
+        {
+            "response": "Aku mendengar kecemasanmu. Perasaan ini memang berat, tapi ingat - ini tidak akan bertahan selamanya. 💙",
+            "follow_up": false,
+            "intensity": "high",
+            "empathy_type": "cognitive"
+        },
+        {
+            "response": "Kecemasan yang kamu rasakan itu wajar dan valid. Banyak orang mengalami hal serupa. Mari kita coba pahami lebih dalam yuk.",
+            "follow_up": true,
+            "intensity": "medium",
+            "empathy_type": "normalizing"
+        },
+        {
+            "response": "Aku bisa merasakan betapa cemasnya kamu sekarang. Napas pelan dulu ya. Aku di sini menemanimu.",
+            "follow_up": true,
+            "intensity": "high",
+            "empathy_type": "grounding"
+        },
+        {
+            "response": "Sepertinya ada banyak hal yang membuatmu khawatir. Boleh cerita apa yang paling membuatmu cemas?",
+            "follow_up": true,
+            "intensity": "medium",
+            "empathy_type": "exploratory"
+        }
+    ],
+    "Sad": [
+        {
+            "response": "Aku turut merasakan bebanmu. Tidak apa-apa untuk bersedih - ini adalah bagian dari proses penyembuhan.",
+            "follow_up": false,
+            "intensity": "high",
+            "empathy_type": "affective"
+        },
+        {
+            "response": "Sedih itu berat ya. Kamu tidak sendirian merasakan ini. Aku di sini untuk mendengarkan.",
+            "follow_up": true,
+            "intensity": "high",
+            "empathy_type": "presence"
+        },
+        {
+            "response": "Kesedihanmu terasa nyata. Kadang memang kita butuh waktu untuk merasakan dan memproses perasaan ini.",
+            "follow_up": false,
+            "intensity": "medium",
+            "empathy_type": "validating"
+        }
+    ],
+    "Stressed": [
+        {
+            "response": "Tekanan yang kamu rasakan itu nyata dan berat. Bagaimana kamu biasa mengatasi stres?",
+            "follow_up": true,
+            "intensity": "medium",
+            "empathy_type": "solution_focused"
+        },
+        {
+            "response": "Stres bisa sangat menguras energi. Mari kita coba identifikasi satu hal kecil yang bisa kamu kontrol hari ini.",
+            "follow_up": true,
+            "intensity": "high",
+            "empathy_type": "empowering"
+        },
+        {
+            "response": "Sepertinya ada banyak hal yang harus kamu handle sekaligus. Mau kita breakdown satu per satu?",
+            "follow_up": true,
+            "intensity": "medium",
+            "empathy_type": "collaborative"
+        }
+    ],
+    "Tired": [
+        {
+            "response": "Kelelahan bisa sangat overwhelming. Sudahkah kamu beristirahat dengan cukup belakangan ini?",
+            "follow_up": true,
+            "intensity": "medium",
+            "empathy_type": "inquiry"
+        },
+        {
+            "response": "Tubuh dan pikiranmu sepertinya sedang memberikan sinyal untuk istirahat. Itu penting untuk didengarkan.",
+            "follow_up": false,
+            "intensity": "high",
+            "empathy_type": "somatic_awareness"
+        },
+        {
+            "response": "Lelah fisik atau lelah mental nih? Atau keduanya? Cerita yuk, mungkin aku bisa bantu.",
+            "follow_up": true,
+            "intensity": "medium",
+            "empathy_type": "differential"
+        }
+    ],
+    "Overwhelmed": [
+        {
+            "response": "Aku bisa membayangkan betapa beratnya beban yang kamu tanggung saat ini. Kamu sudah sangat kuat bertahan sejauh ini. 💙",
+            "follow_up": false,
+            "intensity": "high",
+            "empathy_type": "affirming"
+        },
+        {
+            "response": "Ketika semuanya terasa terlalu banyak, kadang kita perlu pause sejenak. Aku ada di sini bersamamu.",
+            "follow_up": true,
+            "intensity": "high",
+            "empathy_type": "grounding"
+        },
+        {
+            "response": "Sepertinya banyak hal terjadi bersamaan. Mari kita fokus pada satu hal dulu - apa yang paling urgent?",
+            "follow_up": true,
+            "intensity": "high",
+            "empathy_type": "prioritizing"
+        }
+    ],
+    "Angry": [
+        {
+            "response": "Kemarahanmu valid. Ada sesuatu yang membuatmu frustasi atau merasa tidak adil?",
+            "follow_up": true,
+            "intensity": "medium",
+            "empathy_type": "exploratory"
+        },
+        {
+            "response": "Aku mendengar kekesalanmu. Marah itu sinyal bahwa ada sesuatu yang penting bagimu. Mau cerita?",
+            "follow_up": true,
+            "intensity": "high",
+            "empathy_type": "meaning_making"
+        }
+    ],
+    "Hopeless": [
+        {
+            "response": "Ketika harapan terasa menipis, itu sangat berat. Tapi faktanya kamu masih di sini, dan itu berarti sesuatu. 💙",
+            "follow_up": true,
+            "intensity": "high",
+            "empathy_type": "existential",
+            "risk_level": "moderate",
+            "follow_up_required": true
+        },
+        {
+            "response": "Perasaan tanpa harapan ini sangat menyakitkan. Aku perlu tahu - apakah kamu aman saat ini?",
+            "follow_up": true,
+            "intensity": "critical",
+            "empathy_type": "safety_focused",
+            "risk_level": "high",
+            "crisis_protocol": true
+        }
+    ],
+    "default": [
+        {
+            "response": "Terima kasih sudah berbagi perasaanmu. Aku mendengarmu. 💙",
+            "follow_up": false,
+            "intensity": "medium"
+        },
+        {
+            "response": "Aku menghargai keterbukuanmu. Bagaimana lagi perasaanmu?",
+            "follow_up": true,
+            "intensity": "medium"
+        },
+        {
+            "response": "Perasaanmu itu penting. Terima kasih sudah mau berbagi.",
+            "follow_up": false,
+            "intensity": "medium"
+        },
+        {
+            "response": "Aku di sini bersamamu. Ceritakan lebih lanjut jika kamu mau.",
+            "follow_up": true,
+            "intensity": "medium"
+        }
+    ]
+}
