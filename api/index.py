@@ -376,7 +376,35 @@ EMPATHY_RESPONSES = [
 ]
 
 SESSION_LENGTH = 25  # 25 questions per session
-EMOTIONS = ['calm', 'happy', 'neutral', 'anxious', 'sad', 'stressed', 'hopeful']
+
+# Detailed emotion tags matching original backend
+EMOTION_TAGS = {
+    'happy': ['Happy', 'Energetic', 'Confident', 'Focused', 'Stable'],
+    'calm': ['Calm', 'Relaxed', 'Rested', 'Supported'],
+    'neutral': ['Neutral', 'Functional', 'Coping'],
+    'anxious': ['Anxious', 'Nervous', 'Worried', 'Severely_anxious'],
+    'sad': ['Sad', 'Low', 'Depressed', 'Hopeless'],
+    'stressed': ['Stressed', 'Overwhelmed', 'Fatigued', 'Exhausted'],
+    'lonely': ['Lonely', 'Isolated', 'Disconnected'],
+    'guilty': ['Guilty', 'Worthless', 'Self_doubt']
+}
+
+def get_detailed_emotion(score, category):
+    """Map score and category to detailed emotion tag"""
+    emotion_map = {
+        'Depression': {5: 'Stable', 4: 'Neutral', 2: 'Low', 1: 'Depressed'},
+        'Anxiety': {5: 'Calm', 4: 'Neutral', 2: 'Anxious', 1: 'Severely_anxious'},
+        'Sleep': {5: 'Rested', 4: 'Tired', 2: 'Exhausted', 1: 'Severely_fatigued'},
+        'Energy': {5: 'Energetic', 4: 'Tired', 2: 'Fatigued', 1: 'Exhausted'},
+        'Self': {5: 'Confident', 4: 'Self_doubt', 2: 'Guilty', 1: 'Worthless'},
+        'Focus': {5: 'Focused', 4: 'Distracted', 2: 'Unfocused', 1: 'Scattered'},
+        'Social': {5: 'Connected', 4: 'Neutral', 2: 'Isolated', 1: 'Lonely'},
+        'Stress': {5: 'Calm', 4: 'Neutral', 2: 'Stressed', 1: 'Overwhelmed'},
+        'Opening': {5: 'Happy', 3: 'Neutral', 2: 'Sad', 1: 'Distressed'},
+        'Closing': {5: 'Hopeful', 4: 'Neutral', 2: 'Hesitant', 1: 'Resistant'}
+    }
+    cat_map = emotion_map.get(category, {})
+    return cat_map.get(score, 'Neutral')
 
 # ============ CORS ============
 @app.after_request
@@ -576,19 +604,14 @@ def session_insights(sid):
             answers_data.append({
                 'q': q.get('text', ''),
                 'a': opt.get('text', '') if opt else '',
-                'score': a.score
+                'score': a.score,
+                'category': q.get('category', 'General')
             })
-            # Track emotions based on score - more granular categories
+            # Track emotions using detailed emotion mapping
             score = a.score or 3
-            if score >= 4:
-                emotion = 'happy'
-            elif score == 3:
-                emotion = 'neutral'
-            elif score == 2:
-                emotion = 'anxious'
-            else:  # score 1
-                emotion = 'sad'
-            emotion_counts[emotion] = emotion_counts.get(emotion, 0) + 1
+            category = q.get('category', 'General')
+            detailed_emotion = get_detailed_emotion(score, category)
+            emotion_counts[detailed_emotion] = emotion_counts.get(detailed_emotion, 0) + 1
     
     # Calculate scores
     if answers:
@@ -613,9 +636,13 @@ def session_insights(sid):
         running_score = ((running_score * i) + (a.score or 3)) / (i + 1)
         journey_points.append(round(running_score, 2))
     
-    # Calculate negative emotion ratio for mood adjustment
+    # Calculate negative emotion ratio for mood adjustment (using detailed emotions)
     num_answers = len(answers) or 1
-    negative_ratio = (emotion_counts.get('sad', 0) + emotion_counts.get('anxious', 0)) / num_answers
+    negative_emotions = ['Anxious', 'Severely_anxious', 'Sad', 'Low', 'Depressed', 'Hopeless', 
+                        'Lonely', 'Isolated', 'Guilty', 'Worthless', 'Stressed', 'Overwhelmed', 
+                        'Exhausted', 'Fatigued', 'Distressed']
+    negative_count = sum(emotion_counts.get(e, 0) for e in negative_emotions)
+    negative_ratio = negative_count / num_answers
     
     # Determine mood level - consider BOTH avg_score AND emotion patterns
     if avg_score >= 4 and negative_ratio < 0.2:
