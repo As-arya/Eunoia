@@ -192,43 +192,45 @@ def submit_screening(uid):
 @auth_required
 def next_question(uid, sid):
     return jsonify({
+        'status': 'ongoing',
+        'progress': '1/25',
         'question': {
             'id': 1,
-            'text': 'How are you feeling today?',
+            'text': 'Bagaimana perasaanmu hari ini?',
             'category': 'mood',
             'question_number': 1,
             'total_questions': 25,
             'options': [
-                {'id': 1, 'text': 'Great', 'score': 5},
-                {'id': 2, 'text': 'Good', 'score': 4},
-                {'id': 3, 'text': 'Okay', 'score': 3},
-                {'id': 4, 'text': 'Not so good', 'score': 2},
-                {'id': 5, 'text': 'Bad', 'score': 1}
+                {'id': 1, 'text': 'Sangat Baik', 'score': 5},
+                {'id': 2, 'text': 'Baik', 'score': 4},
+                {'id': 3, 'text': 'Biasa Saja', 'score': 3},
+                {'id': 4, 'text': 'Kurang Baik', 'score': 2},
+                {'id': 5, 'text': 'Buruk', 'score': 1}
             ]
-        },
-        'session_complete': False
+        }
     })
 
 @app.route('/api/screening/sessions/<int:sid>/answer', methods=['POST'])
 @auth_required
 def submit_answer(uid, sid):
     return jsonify({
-        'empathy_response': 'Thank you for sharing. Your feelings are valid and I appreciate your openness.',
-        'next_question': {
+        'ai_empathy_reply': 'Terima kasih sudah berbagi. Perasaanmu valid dan aku menghargai keterbukaanmu. 💙',
+        'status': 'ongoing',
+        'progress': '2/25',
+        'question': {
             'id': 2,
-            'text': 'How well did you sleep last night?',
+            'text': 'Bagaimana kualitas tidurmu semalam?',
             'category': 'sleep',
             'question_number': 2,
             'total_questions': 25,
             'options': [
-                {'id': 1, 'text': 'Very well', 'score': 5},
-                {'id': 2, 'text': 'Well', 'score': 4},
-                {'id': 3, 'text': 'Average', 'score': 3},
-                {'id': 4, 'text': 'Poorly', 'score': 2},
-                {'id': 5, 'text': 'Very poorly', 'score': 1}
+                {'id': 1, 'text': 'Sangat Nyenyak', 'score': 5},
+                {'id': 2, 'text': 'Nyenyak', 'score': 4},
+                {'id': 3, 'text': 'Cukup', 'score': 3},
+                {'id': 4, 'text': 'Kurang Nyenyak', 'score': 2},
+                {'id': 5, 'text': 'Tidak Bisa Tidur', 'score': 1}
             ]
-        },
-        'session_complete': False
+        }
     })
 
 @app.route('/api/screening/sessions/<int:sid>/summary', methods=['GET'])
