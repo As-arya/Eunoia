@@ -20,65 +20,72 @@ CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 # Demo user storage
 USERS = {}
 
-# Demo questions pool for rotating
+# Demo questions pool (15 questions for variety)
 DEMO_QUESTIONS = [
     {'id': 1, 'text': 'Bagaimana perasaanmu hari ini?', 'category': 'mood', 'options': [
-        {'id': 1, 'text': 'Sangat Baik 😊', 'score': 5},
-        {'id': 2, 'text': 'Baik', 'score': 4},
-        {'id': 3, 'text': 'Biasa Saja', 'score': 3},
-        {'id': 4, 'text': 'Kurang Baik', 'score': 2},
-        {'id': 5, 'text': 'Buruk 😔', 'score': 1}
+        {'id': 1, 'text': 'Sangat Baik 😊', 'score': 5}, {'id': 2, 'text': 'Baik', 'score': 4},
+        {'id': 3, 'text': 'Biasa Saja', 'score': 3}, {'id': 4, 'text': 'Kurang Baik', 'score': 2}, {'id': 5, 'text': 'Buruk 😔', 'score': 1}
     ]},
     {'id': 2, 'text': 'Bagaimana kualitas tidurmu semalam?', 'category': 'sleep', 'options': [
-        {'id': 1, 'text': 'Sangat Nyenyak', 'score': 5},
-        {'id': 2, 'text': 'Nyenyak', 'score': 4},
-        {'id': 3, 'text': 'Cukup', 'score': 3},
-        {'id': 4, 'text': 'Kurang Nyenyak', 'score': 2},
-        {'id': 5, 'text': 'Tidak Bisa Tidur', 'score': 1}
+        {'id': 1, 'text': 'Sangat Nyenyak', 'score': 5}, {'id': 2, 'text': 'Nyenyak', 'score': 4},
+        {'id': 3, 'text': 'Cukup', 'score': 3}, {'id': 4, 'text': 'Kurang Nyenyak', 'score': 2}, {'id': 5, 'text': 'Tidak Bisa Tidur', 'score': 1}
     ]},
     {'id': 3, 'text': 'Seberapa sering kamu merasa cemas akhir-akhir ini?', 'category': 'anxiety', 'options': [
-        {'id': 1, 'text': 'Tidak Pernah', 'score': 5},
-        {'id': 2, 'text': 'Jarang', 'score': 4},
-        {'id': 3, 'text': 'Kadang-kadang', 'score': 3},
-        {'id': 4, 'text': 'Sering', 'score': 2},
-        {'id': 5, 'text': 'Sangat Sering', 'score': 1}
+        {'id': 1, 'text': 'Tidak Pernah', 'score': 5}, {'id': 2, 'text': 'Jarang', 'score': 4},
+        {'id': 3, 'text': 'Kadang-kadang', 'score': 3}, {'id': 4, 'text': 'Sering', 'score': 2}, {'id': 5, 'text': 'Sangat Sering', 'score': 1}
     ]},
     {'id': 4, 'text': 'Apakah kamu merasa memiliki energi yang cukup?', 'category': 'energy', 'options': [
-        {'id': 1, 'text': 'Sangat Berenergi', 'score': 5},
-        {'id': 2, 'text': 'Cukup Berenergi', 'score': 4},
-        {'id': 3, 'text': 'Normal', 'score': 3},
-        {'id': 4, 'text': 'Kurang Berenergi', 'score': 2},
-        {'id': 5, 'text': 'Sangat Lelah', 'score': 1}
+        {'id': 1, 'text': 'Sangat Berenergi', 'score': 5}, {'id': 2, 'text': 'Cukup Berenergi', 'score': 4},
+        {'id': 3, 'text': 'Normal', 'score': 3}, {'id': 4, 'text': 'Kurang Berenergi', 'score': 2}, {'id': 5, 'text': 'Sangat Lelah', 'score': 1}
     ]},
     {'id': 5, 'text': 'Bagaimana hubunganmu dengan orang-orang terdekat?', 'category': 'social', 'options': [
-        {'id': 1, 'text': 'Sangat Baik', 'score': 5},
-        {'id': 2, 'text': 'Baik', 'score': 4},
-        {'id': 3, 'text': 'Biasa Saja', 'score': 3},
-        {'id': 4, 'text': 'Kurang Baik', 'score': 2},
-        {'id': 5, 'text': 'Bermasalah', 'score': 1}
+        {'id': 1, 'text': 'Sangat Baik', 'score': 5}, {'id': 2, 'text': 'Baik', 'score': 4},
+        {'id': 3, 'text': 'Biasa Saja', 'score': 3}, {'id': 4, 'text': 'Kurang Baik', 'score': 2}, {'id': 5, 'text': 'Bermasalah', 'score': 1}
     ]},
     {'id': 6, 'text': 'Apakah kamu merasa mampu mengelola stres dengan baik?', 'category': 'stress', 'options': [
-        {'id': 1, 'text': 'Sangat Mampu', 'score': 5},
-        {'id': 2, 'text': 'Mampu', 'score': 4},
-        {'id': 3, 'text': 'Kadang Sulit', 'score': 3},
-        {'id': 4, 'text': 'Sering Sulit', 'score': 2},
-        {'id': 5, 'text': 'Tidak Mampu', 'score': 1}
+        {'id': 1, 'text': 'Sangat Mampu', 'score': 5}, {'id': 2, 'text': 'Mampu', 'score': 4},
+        {'id': 3, 'text': 'Kadang Sulit', 'score': 3}, {'id': 4, 'text': 'Sering Sulit', 'score': 2}, {'id': 5, 'text': 'Tidak Mampu', 'score': 1}
     ]},
     {'id': 7, 'text': 'Seberapa puas kamu dengan hidupmu saat ini?', 'category': 'satisfaction', 'options': [
-        {'id': 1, 'text': 'Sangat Puas', 'score': 5},
-        {'id': 2, 'text': 'Puas', 'score': 4},
-        {'id': 3, 'text': 'Cukup Puas', 'score': 3},
-        {'id': 4, 'text': 'Kurang Puas', 'score': 2},
-        {'id': 5, 'text': 'Tidak Puas', 'score': 1}
+        {'id': 1, 'text': 'Sangat Puas', 'score': 5}, {'id': 2, 'text': 'Puas', 'score': 4},
+        {'id': 3, 'text': 'Cukup Puas', 'score': 3}, {'id': 4, 'text': 'Kurang Puas', 'score': 2}, {'id': 5, 'text': 'Tidak Puas', 'score': 1}
     ]},
     {'id': 8, 'text': 'Apakah kamu merasa termotivasi untuk melakukan aktivitas?', 'category': 'motivation', 'options': [
-        {'id': 1, 'text': 'Sangat Termotivasi', 'score': 5},
-        {'id': 2, 'text': 'Termotivasi', 'score': 4},
-        {'id': 3, 'text': 'Biasa Saja', 'score': 3},
-        {'id': 4, 'text': 'Kurang Termotivasi', 'score': 2},
-        {'id': 5, 'text': 'Tidak Termotivasi', 'score': 1}
+        {'id': 1, 'text': 'Sangat Termotivasi', 'score': 5}, {'id': 2, 'text': 'Termotivasi', 'score': 4},
+        {'id': 3, 'text': 'Biasa Saja', 'score': 3}, {'id': 4, 'text': 'Kurang Termotivasi', 'score': 2}, {'id': 5, 'text': 'Tidak Termotivasi', 'score': 1}
+    ]},
+    {'id': 9, 'text': 'Apakah kamu merasa kesepian belakangan ini?', 'category': 'loneliness', 'options': [
+        {'id': 1, 'text': 'Tidak Sama Sekali', 'score': 5}, {'id': 2, 'text': 'Jarang', 'score': 4},
+        {'id': 3, 'text': 'Kadang-kadang', 'score': 3}, {'id': 4, 'text': 'Sering', 'score': 2}, {'id': 5, 'text': 'Selalu', 'score': 1}
+    ]},
+    {'id': 10, 'text': 'Seberapa baik kamu bisa berkonsentrasi?', 'category': 'focus', 'options': [
+        {'id': 1, 'text': 'Sangat Fokus', 'score': 5}, {'id': 2, 'text': 'Cukup Fokus', 'score': 4},
+        {'id': 3, 'text': 'Normal', 'score': 3}, {'id': 4, 'text': 'Sulit Fokus', 'score': 2}, {'id': 5, 'text': 'Tidak Bisa Fokus', 'score': 1}
+    ]},
+    {'id': 11, 'text': 'Bagaimana nafsu makanmu akhir-akhir ini?', 'category': 'appetite', 'options': [
+        {'id': 1, 'text': 'Normal/Baik', 'score': 5}, {'id': 2, 'text': 'Sedikit Berubah', 'score': 4},
+        {'id': 3, 'text': 'Berubah', 'score': 3}, {'id': 4, 'text': 'Sangat Berubah', 'score': 2}, {'id': 5, 'text': 'Tidak Ada Nafsu', 'score': 1}
+    ]},
+    {'id': 12, 'text': 'Apakah kamu merasa dihargai oleh orang lain?', 'category': 'self-worth', 'options': [
+        {'id': 1, 'text': 'Sangat Dihargai', 'score': 5}, {'id': 2, 'text': 'Dihargai', 'score': 4},
+        {'id': 3, 'text': 'Biasa Saja', 'score': 3}, {'id': 4, 'text': 'Kurang Dihargai', 'score': 2}, {'id': 5, 'text': 'Tidak Dihargai', 'score': 1}
+    ]},
+    {'id': 13, 'text': 'Seberapa optimis kamu tentang masa depan?', 'category': 'hope', 'options': [
+        {'id': 1, 'text': 'Sangat Optimis', 'score': 5}, {'id': 2, 'text': 'Optimis', 'score': 4},
+        {'id': 3, 'text': 'Netral', 'score': 3}, {'id': 4, 'text': 'Pesimis', 'score': 2}, {'id': 5, 'text': 'Sangat Pesimis', 'score': 1}
+    ]},
+    {'id': 14, 'text': 'Apakah kamu punya waktu untuk dirimu sendiri?', 'category': 'self-care', 'options': [
+        {'id': 1, 'text': 'Selalu Ada', 'score': 5}, {'id': 2, 'text': 'Sering', 'score': 4},
+        {'id': 3, 'text': 'Kadang-kadang', 'score': 3}, {'id': 4, 'text': 'Jarang', 'score': 2}, {'id': 5, 'text': 'Tidak Pernah', 'score': 1}
+    ]},
+    {'id': 15, 'text': 'Bagaimana perasaanmu tentang pencapaianmu?', 'category': 'achievement', 'options': [
+        {'id': 1, 'text': 'Sangat Bangga', 'score': 5}, {'id': 2, 'text': 'Bangga', 'score': 4},
+        {'id': 3, 'text': 'Biasa Saja', 'score': 3}, {'id': 4, 'text': 'Kurang Puas', 'score': 2}, {'id': 5, 'text': 'Kecewa', 'score': 1}
     ]}
 ]
+
+# Demo session config
+DEMO_SESSION_LENGTH = 10  # Complete after 10 questions for demo
 
 # Empathy responses pool
 EMPATHY_RESPONSES = [
@@ -302,9 +309,35 @@ def end_session(uid, sid):
 @auth_required
 def session_insights(uid, sid):
     return jsonify({
-        'session_id': sid, 'mood_score': 7,
-        'emotions': [{'name': 'Tenang', 'percentage': 40}, {'name': 'Bahagia', 'percentage': 35}],
-        'recommendations': ['Lanjutkan kebiasaan positif', 'Pertahankan pola tidur yang baik']
+        'session_id': sid,
+        'status': 'completed',
+        'mood_score': 7.5,
+        'overall_mood': 'Neutral',
+        'emotional_journey': {
+            'start': 'Calm',
+            'end': 'Neutral',
+            'trend': 'stable'
+        },
+        'primary_emotion': 'calm',
+        'emotions': [
+            {'emotion': 'calm', 'percentage': 40, 'color': '#4ade80'},
+            {'emotion': 'happy', 'percentage': 30, 'color': '#fbbf24'},
+            {'emotion': 'neutral', 'percentage': 20, 'color': '#60a5fa'},
+            {'emotion': 'anxious', 'percentage': 10, 'color': '#f87171'}
+        ],
+        'key_insights': [
+            {'icon': '🌙', 'title': 'Pola Tidur', 'description': 'Kualitas tidurmu cukup baik, pertahankan!'},
+            {'icon': '💪', 'title': 'Energi', 'description': 'Level energimu stabil sepanjang hari.'},
+            {'icon': '🧘', 'title': 'Stres', 'description': 'Kamu cukup mampu mengelola stres dengan baik.'}
+        ],
+        'phq9_score': 4,
+        'gad7_score': 3,
+        'wellness_score': 75,
+        'summary': 'Kondisi mental kamu secara keseluruhan baik. Mood stabil dengan kecenderungan positif.',
+        'recommendation': 'Lanjutkan aktivitas positif dan jaga pola tidur yang teratur.',
+        'created_at': '2024-01-09T10:00:00Z',
+        'questions_answered': DEMO_SESSION_LENGTH,
+        'duration_minutes': 8
     })
 
 # ========== SCREENING (Demo with rotating questions) ==========
@@ -324,11 +357,11 @@ def next_question(uid, sid):
     idx = question_tracker['answered'] % len(DEMO_QUESTIONS)
     question = DEMO_QUESTIONS[idx].copy()
     question['question_number'] = question_tracker['answered'] + 1
-    question['total_questions'] = 25
+    question['total_questions'] = DEMO_SESSION_LENGTH
     
     return jsonify({
         'status': 'ongoing',
-        'progress': f'{question_tracker["answered"] + 1}/25',
+        'progress': f'{question_tracker["answered"] + 1}/{DEMO_SESSION_LENGTH}',
         'question': question
     })
 
@@ -338,8 +371,8 @@ def submit_answer(uid, sid):
     # Increment answered count
     question_tracker['answered'] += 1
     
-    # Check if session should complete (after 25 questions for demo, we'll use 5)
-    if question_tracker['answered'] >= 25:
+    # Check if session should complete
+    if question_tracker['answered'] >= DEMO_SESSION_LENGTH:
         return jsonify({
             'status': 'completed',
             'ai_empathy_reply': 'Sesi screening telah selesai! Terima kasih sudah berbagi perasaanmu. 🎉'
@@ -349,12 +382,12 @@ def submit_answer(uid, sid):
     idx = question_tracker['answered'] % len(DEMO_QUESTIONS)
     next_q = DEMO_QUESTIONS[idx].copy()
     next_q['question_number'] = question_tracker['answered'] + 1
-    next_q['total_questions'] = 25
+    next_q['total_questions'] = DEMO_SESSION_LENGTH
     
     return jsonify({
         'ai_empathy_reply': random.choice(EMPATHY_RESPONSES),
         'status': 'ongoing',
-        'progress': f'{question_tracker["answered"] + 1}/25',
+        'progress': f'{question_tracker["answered"] + 1}/{DEMO_SESSION_LENGTH}',
         'question': next_q
     })
 
