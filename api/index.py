@@ -94,7 +94,6 @@ class Answer(db.Model):
     question_id = db.Column(db.Integer)
     option_id = db.Column(db.Integer)
     score = db.Column(db.Integer)
-    emotion_tag = db.Column(db.String(50))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class SessionInsight(db.Model):
@@ -547,8 +546,8 @@ def session_insights(sid):
                 'a': opt.get('text', '') if opt else '',
                 'score': a.score
             })
-            # Track emotions
-            emotion = a.emotion_tag or ('sad' if (a.score or 3) <= 2 else 'happy' if (a.score or 3) >= 4 else 'neutral')
+            # Track emotions based on score
+            emotion = 'sad' if (a.score or 3) <= 2 else 'happy' if (a.score or 3) >= 4 else 'neutral'
             emotion_counts[emotion] = emotion_counts.get(emotion, 0) + 1
     
     # Calculate scores
@@ -681,50 +680,54 @@ def next_question(sid):
 @app.route('/api/screening/sessions/<int:sid>/answer', methods=['POST'])
 @jwt_required()
 def submit_answer(sid):
-    session = Session.query.get_or_404(sid)
-    data = request.get_json() or {}
-    
-    # Save answer
-    answer = Answer(
-        session_id=sid,
-        question_id=data.get('question_id'),
-        option_id=data.get('option_id'),
-        score=data.get('score', 3)
-    )
-    db.session.add(answer)
-    
-    # Update session
-    session.questions_answered += 1
-    answers = Answer.query.filter_by(session_id=sid).all()
-    if answers:
-        avg_score = sum(a.score or 3 for a in answers) / len(answers)
-        session.mood_score = avg_score * 2  # Scale to 10
-        session.primary_emotion = random.choice(EMOTIONS)
-    
-    # Check completion
-    if session.questions_answered >= SESSION_LENGTH:
-        session.status = 'completed'
-        session.completed_at = datetime.utcnow()
+    try:
+        session = Session.query.get_or_404(sid)
+        data = request.get_json() or {}
+        
+        # Save answer (without emotion_tag to avoid migration issues)
+        answer = Answer(
+            session_id=sid,
+            question_id=data.get('question_id'),
+            option_id=data.get('option_id'),
+            score=data.get('score', 3)
+        )
+        db.session.add(answer)
+        
+        # Update session
+        session.questions_answered += 1
+        answers = Answer.query.filter_by(session_id=sid).all()
+        if answers:
+            avg_score = sum(a.score or 3 for a in answers) / len(answers)
+            session.mood_score = avg_score * 2  # Scale to 10
+            session.primary_emotion = random.choice(EMOTIONS)
+        
+        # Check completion
+        if session.questions_answered >= SESSION_LENGTH:
+            session.status = 'completed'
+            session.completed_at = datetime.utcnow()
+            db.session.commit()
+            return jsonify({
+                'status': 'completed',
+                'ai_empathy_reply': 'Sesi selesai! Terima kasih sudah berbagi. 🎉'
+            })
+        
         db.session.commit()
+        
+        # Get next question
+        idx = session.questions_answered % len(DEMO_QUESTIONS)
+        next_q = DEMO_QUESTIONS[idx].copy()
+        next_q['question_number'] = session.questions_answered + 1
+        next_q['total_questions'] = SESSION_LENGTH
+        
         return jsonify({
-            'status': 'completed',
-            'ai_empathy_reply': 'Sesi selesai! Terima kasih sudah berbagi. 🎉'
+            'ai_empathy_reply': random.choice(EMPATHY_RESPONSES),
+            'status': 'ongoing',
+            'progress': f'{session.questions_answered + 1}/{SESSION_LENGTH}',
+            'question': next_q
         })
-    
-    db.session.commit()
-    
-    # Get next question
-    idx = session.questions_answered % len(DEMO_QUESTIONS)
-    next_q = DEMO_QUESTIONS[idx].copy()
-    next_q['question_number'] = session.questions_answered + 1
-    next_q['total_questions'] = SESSION_LENGTH
-    
-    return jsonify({
-        'ai_empathy_reply': random.choice(EMPATHY_RESPONSES),
-        'status': 'ongoing',
-        'progress': f'{session.questions_answered + 1}/{SESSION_LENGTH}',
-        'question': next_q
-    })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/screening/sessions/<int:sid>/summary')
 @jwt_required()
