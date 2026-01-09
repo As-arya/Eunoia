@@ -95,17 +95,33 @@ EMPATHY_RESPONSES = [
 # Track demo question index (simple rotation)
 question_tracker = {'current': 0, 'answered': 0}
 
-def create_token(user_id, expires_hours=24):
-    return jwt.encode({'sub': str(user_id), 'exp': datetime.utcnow() + timedelta(hours=expires_hours)}, JWT_SECRET, algorithm='HS256')
+def create_token(user_id, name='Demo User', email='demo@euonia.app', expires_hours=24):
+    """Create JWT token with user info embedded"""
+    return jwt.encode({
+        'sub': str(user_id),
+        'name': name,
+        'email': email,
+        'exp': datetime.utcnow() + timedelta(hours=expires_hours)
+    }, JWT_SECRET, algorithm='HS256')
 
-def get_user_id():
+def get_user_from_token():
+    """Get full user info from JWT token"""
     auth = request.headers.get('Authorization', '')
     if auth.startswith('Bearer '):
         try:
-            return jwt.decode(auth[7:], JWT_SECRET, algorithms=['HS256']).get('sub')
+            payload = jwt.decode(auth[7:], JWT_SECRET, algorithms=['HS256'])
+            return {
+                'id': payload.get('sub'),
+                'name': payload.get('name', 'User'),
+                'email': payload.get('email', 'user@euonia.app')
+            }
         except:
             pass
     return None
+
+def get_user_id():
+    user = get_user_from_token()
+    return user['id'] if user else None
 
 def auth_required(f):
     def wrapper(*args, **kwargs):
@@ -145,8 +161,8 @@ def register():
         return jsonify({
             'message': 'Registered',
             'user': {'id': uid, 'name': name, 'email': email},
-            'access_token': create_token(uid),
-            'refresh_token': create_token(uid, 720)
+            'access_token': create_token(uid, name, email),
+            'refresh_token': create_token(uid, name, email, 720)
         }), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -159,27 +175,34 @@ def login():
         data = request.get_json() or {}
         email = data.get('email', '').strip().lower()
         
-        # Demo: always allow login with any credentials
+        # Demo: allow login, derive name from email
         uid = random.randint(1000, 9999)
-        name = email.split('@')[0].title() if email else 'Demo User'
+        name = email.split('@')[0].replace('.', ' ').replace('_', ' ').title() if email else 'Demo User'
+        actual_email = email or 'demo@euonia.app'
         
         return jsonify({
             'message': 'Login successful',
-            'user': {'id': uid, 'name': name, 'email': email or 'demo@euonia.app'},
-            'access_token': create_token(uid),
-            'refresh_token': create_token(uid, 720)
+            'user': {'id': uid, 'name': name, 'email': actual_email},
+            'access_token': create_token(uid, name, actual_email),
+            'refresh_token': create_token(uid, name, actual_email, 720)
         }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/auth/me')
-@auth_required
-def auth_me(uid):
-    return jsonify({'id': int(uid), 'name': 'Demo User', 'email': 'demo@euonia.app'})
+def auth_me_route():
+    user = get_user_from_token()
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    return jsonify({'id': int(user['id']), 'name': user['name'], 'email': user['email']})
 
 @app.route('/api/auth/refresh', methods=['POST'])
 def refresh():
-    uid = get_user_id() or random.randint(1000, 9999)
+    user = get_user_from_token()
+    if user:
+        return jsonify({'access_token': create_token(user['id'], user['name'], user['email'])})
+    # Fallback for demo
+    uid = random.randint(1000, 9999)
     return jsonify({'access_token': create_token(uid)})
 
 @app.route('/api/auth/logout', methods=['POST'])
@@ -188,12 +211,14 @@ def logout():
 
 # ========== USERS ==========
 @app.route('/api/users/me', methods=['GET', 'PUT', 'OPTIONS'])
-@auth_required
-def users_me(uid):
+def users_me_route():
     if request.method == 'OPTIONS':
         return '', 200
+    user = get_user_from_token()
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
     return jsonify({
-        'id': int(uid), 'name': 'Demo User', 'email': 'demo@euonia.app',
+        'id': int(user['id']), 'name': user['name'], 'email': user['email'],
         'completedSessions': 5, 'streak': 3, 'joinDate': '2024-01-01'
     })
 
