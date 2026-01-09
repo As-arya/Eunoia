@@ -3,7 +3,8 @@
  */
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api';
+// Use environment variable for production, fallback to localhost for development
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const apiClient = axios.create({
     baseURL: API_URL,
@@ -63,7 +64,7 @@ apiClient.interceptors.response.use(
     },
     async (error) => {
         const originalRequest = error.config;
-        
+
         if (import.meta.env.DEV) {
             console.log(`[API Error] ${error.response?.status} ${originalRequest?.url}`, error.response?.data);
         }
