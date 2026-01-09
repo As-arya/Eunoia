@@ -795,7 +795,10 @@ def submit_answer(sid):
         if answers:
             avg_score = sum(a.score or 3 for a in answers) / len(answers)
             session.mood_score = avg_score * 2  # Scale to 10
-            session.primary_emotion = random.choice(EMOTIONS)
+            # Use detailed emotion from current answer
+            q = DEMO_QUESTIONS[data.get('question_id', 1) - 1] if data.get('question_id') else None
+            category = q.get('category', 'General') if q else 'General'
+            session.primary_emotion = get_detailed_emotion(data.get('score', 3), category)
         
         # Check completion
         if session.questions_answered >= SESSION_LENGTH:
