@@ -165,10 +165,10 @@ try:
 except ImportError:
     GEMINI_ENABLED = False
 
-def generate_ai_summary(answers_data, total_score, primary_emotion):
+def generate_ai_summary(answers_data, avg_score, primary_emotion):
     """Generate detailed AI summary using Gemini"""
     if not GEMINI_ENABLED:
-        return generate_fallback_summary(total_score, primary_emotion)
+        return generate_fallback_summary(avg_score, primary_emotion)
     
     try:
         model = genai.GenerativeModel('gemini-1.5-flash')
@@ -210,37 +210,36 @@ Gunakan bahasa Indonesia yang hangat, personal ("kamu" bukan "Anda"). Maksimal 1
         return result.text.strip()
     except Exception as e:
         print(f"Gemini error: {e}")
-        return generate_fallback_summary(total_score, primary_emotion)
+        return generate_fallback_summary(avg_score, primary_emotion)
 
-def generate_fallback_summary(total_score, primary_emotion):
-    """Fallback summary when Gemini is not available"""
-    if total_score <= 10:
-        return f"""Berdasarkan sesi ini, kondisi emosionalmu menunjukkan kesejahteraan yang baik. 
+def generate_fallback_summary(avg_score, primary_emotion):
+    """Fallback summary when Gemini is not available - uses avg_score for consistency"""
+    if avg_score >= 4:
+        return """Berdasarkan sesi ini, kondisi emosionalmu menunjukkan kesejahteraan yang baik. 
 Kamu memiliki kemampuan coping yang efektif dan stabilitas emosional yang solid. 
 Ini adalah fondasi yang kuat untuk kesehatan mental jangka panjang. 
 Tetap jaga kebiasaan positif yang sudah kamu bangun! 🌟"""
-    elif total_score <= 20:
-        return f"""Dari analisis sesi ini, ada beberapa area yang mungkin perlu perhatian ekstra. 
+    elif avg_score >= 3:
+        return """Dari analisis sesi ini, kondisi emosionalmu cukup seimbang dengan beberapa variasi. 
 Secara umum kamu menunjukkan kemampuan mengelola emosi dengan baik, namun ada momen-momen tekanan. 
 Ini normal dan menunjukkan kesadaran diri yang baik. 
-Fokus pada self-care dan jangan ragu untuk mencari dukungan saat diperlukan. 💙"""
-    elif total_score <= 35:
-        return f"""Berdasarkan responsmu, aku melihat beberapa tantangan signifikan yang sedang kamu hadapi. 
+Fokus pada self-care dan aktivitas yang membuatmu rileks. 💙"""
+    elif avg_score >= 2:
+        return """Berdasarkan responsmu, aku melihat beberapa tantangan signifikan yang sedang kamu hadapi. 
 Pola responsmu menunjukkan beban emosional yang mempengaruhi beberapa aspek kehidupanmu.
-Mengenali ini adalah kekuatan. Pertimbangkan untuk berbicara dengan profesional kesehatan mental 
-yang dapat memberikan dukungan lebih terarah. 💙"""
+Mengenali ini adalah kekuatan. Pertimbangkan untuk berbicara dengan seseorang yang kamu percaya 
+atau profesional kesehatan mental yang dapat memberikan dukungan lebih terarah. 💙"""
     else:
-        return f"""Dari sesi ini, kondisimu menunjukkan beban emosional yang cukup berat.
+        return """Dari sesi ini, kondisimu menunjukkan beban emosional yang cukup berat.
 Responsmu mengindikasikan dampak konsisten pada berbagai area kehidupan.
 Mencari bantuan profesional adalah langkah berani menuju pemulihan.
-Sangat disarankan untuk segera konsultasi dengan psikolog atau psikiater.
-Hubungi Hotline Kesehatan Jiwa 119 ext 8 (24 jam). 💙"""
+Sangat disarankan untuk berbicara dengan psikolog atau konselor. Kamu tidak sendirian. 💙"""
 
-def get_recommendation(score, emotion):
-    """Get evidence-based recommendation"""
-    if score <= 10:
+def get_recommendation(avg_score, emotion):
+    """Get evidence-based recommendation based on avg_score"""
+    if avg_score >= 4:
         return "Pertahankan rutinitas positifmu! Olahraga teratur dan tidur cukup adalah kunci kesehatan mental."
-    elif score <= 20:
+    elif avg_score >= 3:
         recs = {
             'anxious': "Coba latihan pernapasan 4-7-8: tarik napas 4 detik, tahan 7 detik, buang 8 detik.",
             'sad': "Habiskan 10-15 menit di luar rumah hari ini. Cahaya matahari membantu memperbaiki mood.",
@@ -248,10 +247,10 @@ def get_recommendation(score, emotion):
             'tired': "Tetapkan jadwal tidur konsisten. Hindari layar 1 jam sebelum tidur."
         }
         return recs.get(emotion.lower(), "Luangkan 15 menit untuk aktivitas yang membuatmu tenang hari ini.")
-    elif score <= 35:
-        return "Pertimbangkan berbicara dengan psikolog. Hubungi Hotline Kesehatan Jiwa 119 ext 8."
+    elif avg_score >= 2:
+        return "Pertimbangkan berbicara dengan seseorang yang kamu percaya atau profesional kesehatan mental."
     else:
-        return "Sangat disarankan segera konsultasi dengan profesional. Hubungi 119 ext 8 (24 jam) atau Yayasan Pulih +62 811-1711-555."
+        return "Sangat disarankan untuk berbicara dengan psikolog atau konselor. Kamu tidak sendirian."
 
 # Create tables
 with app.app_context():
@@ -636,9 +635,9 @@ def session_insights(sid):
         mood_improvement = random.randint(-30, -10)
         breakthrough = "Mencari bantuan adalah tanda kekuatan, bukan kelemahan."
     
-    # Generate AI summary (uses Gemini if available)
-    ai_summary = generate_ai_summary(answers_data, total_score, primary_emotion)
-    ai_recommendation = get_recommendation(total_score, primary_emotion)
+    # Generate AI summary (uses Gemini if available) - pass avg_score for consistency
+    ai_summary = generate_ai_summary(answers_data, avg_score, primary_emotion)
+    ai_recommendation = get_recommendation(avg_score, primary_emotion)
     
     # Build emotions distribution from actual data
     total_emotions = sum(emotion_counts.values()) or 1
