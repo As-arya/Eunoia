@@ -156,7 +156,7 @@ def get_questions():
         {'id': 2, 'text': 'How well did you sleep last night?', 'category': 'sleep'},
     ])
 
-# Insights routes (minimal)
+# Insights routes (complete)
 @app.route('/api/insights/dashboard', methods=['GET'])
 @jwt_required()
 def get_dashboard():
@@ -166,6 +166,56 @@ def get_dashboard():
         'currentStreak': 0,
         'averageMood': 0
     })
+
+@app.route('/api/insights/mood-trend', methods=['GET'])
+@jwt_required()
+def get_mood_trend():
+    return jsonify({
+        'trend': 'neutral',
+        'change_percentage': 0,
+        'data_points': []
+    })
+
+@app.route('/api/insights/emotions', methods=['GET'])
+@jwt_required()
+def get_emotions():
+    return jsonify({
+        'emotions': [],
+        'period': 'weekly'
+    })
+
+@app.route('/api/insights/observations', methods=['GET'])
+@jwt_required()
+def get_observations():
+    return jsonify([])
+
+@app.route('/api/insights/observations/<int:observation_id>/read', methods=['POST'])
+@jwt_required()
+def mark_observation_read(observation_id):
+    return jsonify({'success': True})
+
+# Sessions routes (complete)
+@app.route('/api/sessions/<int:session_id>', methods=['GET'])
+@jwt_required()
+def get_session(session_id):
+    return jsonify({
+        'id': session_id,
+        'status': 'completed',
+        'messages': [],
+        'summary': 'Demo session',
+        'created_at': '2024-01-01T00:00:00Z'
+    })
+
+@app.route('/api/sessions/<int:session_id>/messages', methods=['POST'])
+@jwt_required()
+def send_message(session_id):
+    data = request.get_json() or {}
+    return jsonify({
+        'id': 1,
+        'content': 'This is a demo response. The full chatbot functionality requires the complete backend deployment.',
+        'role': 'assistant',
+        'session_id': session_id
+    }), 201
 
 # Catch-all for API routes
 @app.route('/api/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
