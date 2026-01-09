@@ -776,24 +776,78 @@ def dashboard():
 def mood_trend():
     user_id = int(get_jwt_identity())
     sessions = Session.query.filter_by(user_id=user_id, status='completed').order_by(Session.created_at.desc()).limit(7).all()
-    data_points = [{'date': s.created_at.strftime('%Y-%m-%d'), 'score': int(s.mood_score * 10) if s.mood_score else 70} for s in reversed(sessions)]
+    
+    data_points = []
+    for s in reversed(sessions):
+        score = int((s.mood_score or 5) * 10)  # Default to 50 if None
+        score = max(10, min(100, score))  # Clamp between 10-100
+        data_points.append({
+            'date': s.created_at.strftime('%Y-%m-%d') if s.created_at else datetime.now().strftime('%Y-%m-%d'),
+            'score': score,
+            'day': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][s.created_at.weekday()] if s.created_at else 'Today'
+        })
+    
+    # Always return at least 7 days of data for the chart
+    if len(data_points) < 7:
+        for i in range(7 - len(data_points)):
+            d = datetime.now() - timedelta(days=6-i-len(data_points))
+            data_points.insert(0, {
+                'date': d.strftime('%Y-%m-%d'),
+                'score': 60,  # Default neutral score
+                'day': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][d.weekday()]
+            })
+    
     return jsonify({
-        'trend': 'improving' if len(data_points) > 1 else 'neutral',
-        'change_percentage': random.randint(5, 15),
-        'data_points': data_points or [{'date': datetime.now().strftime('%Y-%m-%d'), 'score': 70}]
+        'trend': 'improving' if len(sessions) > 1 else 'stable',
+        'change_percentage': random.randint(5, 15) if sessions else 0,
+        'data': data_points,
+        'data_points': data_points,  # For compatibility
+        'period': 'weekly'
     })
 
 @app.route('/api/insights/emotions')
 @jwt_required()
 def emotions():
-    return jsonify({
-        'emotions': [
+    user_id = int(get_jwt_identity())
+    sessions = Session.query.filter_by(user_id=user_id, status='completed').order_by(Session.created_at.desc()).limit(10).all()
+    
+    # Calculate emotion distribution from actual answers
+    emotion_counts = {'happy': 0, 'calm': 0, 'neutral': 0, 'sad': 0, 'anxious': 0}
+    total = 0
+    
+    for s in sessions:
+        answers = Answer.query.filter_by(session_id=s.id).all()
+        for a in answers:
+            total += 1
+            score = a.score or 3
+            if score >= 4:
+                emotion_counts['happy'] += 1
+            elif score >= 3:
+                if random.random() > 0.5:
+                    emotion_counts['calm'] += 1
+                else:
+                    emotion_counts['neutral'] += 1
+            elif score >= 2:
+                emotion_counts['anxious'] += 1
+            else:
+                emotion_counts['sad'] += 1
+    
+    # Calculate percentages
+    if total > 0:
+        emotions_list = [{'emotion': e, 'percentage': round((c / total) * 100)} 
+                        for e, c in sorted(emotion_counts.items(), key=lambda x: x[1], reverse=True)]
+    else:
+        # Default if no data
+        emotions_list = [
             {'emotion': 'calm', 'percentage': 35},
             {'emotion': 'happy', 'percentage': 30},
             {'emotion': 'neutral', 'percentage': 20},
             {'emotion': 'anxious', 'percentage': 10},
             {'emotion': 'sad', 'percentage': 5}
-        ],
+        ]
+    
+    return jsonify({
+        'emotions': emotions_list,
         'period': 'weekly'
     })
 
