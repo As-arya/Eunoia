@@ -408,26 +408,110 @@ def end_session(sid):
 @jwt_required()
 def session_insights(sid):
     session = Session.query.get_or_404(sid)
+    answers = Answer.query.filter_by(session_id=sid).all()
+    
+    # Calculate actual scores from answers
+    if answers:
+        total_score = sum(a.score or 3 for a in answers)
+        avg_score = total_score / len(answers)
+        max_possible = len(answers) * 5
+        wellness_percentage = int((total_score / max_possible) * 100)
+        mood_score = avg_score * 2  # Scale to 10
+    else:
+        avg_score = 3
+        wellness_percentage = 60
+        mood_score = session.mood_score or 6
+    
+    # Determine mood level and appropriate content
+    if avg_score >= 4:
+        overall_mood = 'Positive'
+        primary_emotion = 'happy'
+        trend = 'improving'
+        summary = 'Kondisi mentalmu secara keseluruhan sangat baik! Tetap pertahankan pola positifmu.'
+        recommendation = 'Lanjutkan aktivitas yang membuatmu bahagia dan berbagi kebaikan dengan orang lain.'
+        emotions = [
+            {'emotion': 'happy', 'percentage': 45},
+            {'emotion': 'calm', 'percentage': 35},
+            {'emotion': 'hopeful', 'percentage': 15},
+            {'emotion': 'neutral', 'percentage': 5}
+        ]
+        key_insights = [
+            {'icon': '🌟', 'title': 'Mood Positif', 'description': 'Kamu memiliki pandangan yang positif!'},
+            {'icon': '💪', 'title': 'Energi Baik', 'description': 'Level energimu dalam kondisi baik.'},
+            {'icon': '🤝', 'title': 'Koneksi Sosial', 'description': 'Hubungan sosialmu terlihat sehat.'}
+        ]
+    elif avg_score >= 3:
+        overall_mood = 'Neutral'
+        primary_emotion = 'neutral'
+        trend = 'stable'
+        summary = 'Kondisi mentalmu stabil. Ada beberapa area yang bisa ditingkatkan.'
+        recommendation = 'Coba luangkan waktu untuk self-care dan aktivitas yang menyenangkan.'
+        emotions = [
+            {'emotion': 'neutral', 'percentage': 40},
+            {'emotion': 'calm', 'percentage': 25},
+            {'emotion': 'anxious', 'percentage': 20},
+            {'emotion': 'sad', 'percentage': 15}
+        ]
+        key_insights = [
+            {'icon': '⚖️', 'title': 'Keseimbangan', 'description': 'Kondisimu cukup stabil, tapi perlu perhatian.'},
+            {'icon': '🌙', 'title': 'Istirahat', 'description': 'Pastikan kamu mendapat istirahat yang cukup.'},
+            {'icon': '💭', 'title': 'Refleksi', 'description': 'Luangkan waktu untuk refleksi diri.'}
+        ]
+    elif avg_score >= 2:
+        overall_mood = 'Concerning'
+        primary_emotion = 'anxious'
+        trend = 'declining'
+        summary = 'Kami melihat beberapa area yang perlu perhatian. Kamu tidak sendirian.'
+        recommendation = 'Pertimbangkan untuk berbicara dengan seseorang yang kamu percaya atau profesional.'
+        emotions = [
+            {'emotion': 'anxious', 'percentage': 35},
+            {'emotion': 'sad', 'percentage': 30},
+            {'emotion': 'stressed', 'percentage': 25},
+            {'emotion': 'neutral', 'percentage': 10}
+        ]
+        key_insights = [
+            {'icon': '⚠️', 'title': 'Perhatian', 'description': 'Ada beberapa area yang memerlukan perhatian lebih.'},
+            {'icon': '💙', 'title': 'Dukungan', 'description': 'Jangan ragu untuk mencari dukungan dari orang terdekat.'},
+            {'icon': '🌱', 'title': 'Langkah Kecil', 'description': 'Mulai dengan langkah kecil untuk perbaikan.'}
+        ]
+    else:
+        overall_mood = 'Needs Support'
+        primary_emotion = 'sad'
+        trend = 'needs_attention'
+        summary = 'Kami sangat peduli dengan kondisimu. Penting untuk mendapatkan dukungan.'
+        recommendation = 'Kami sangat menyarankan untuk berbicara dengan profesional kesehatan mental atau hubungi hotline kesehatan mental: 119 ext 8.'
+        emotions = [
+            {'emotion': 'sad', 'percentage': 40},
+            {'emotion': 'anxious', 'percentage': 30},
+            {'emotion': 'stressed', 'percentage': 20},
+            {'emotion': 'neutral', 'percentage': 10}
+        ]
+        key_insights = [
+            {'icon': '❤️', 'title': 'Kamu Penting', 'description': 'Perasaanmu valid dan kamu layak mendapat bantuan.'},
+            {'icon': '📞', 'title': 'Bantuan Tersedia', 'description': 'Hubungi 119 ext 8 atau profesional kesehatan mental.'},
+            {'icon': '🤗', 'title': 'Tidak Sendirian', 'description': 'Banyak orang peduli dan ingin membantumu.'}
+        ]
+    
     return jsonify({
         'session_id': sid,
         'status': session.status,
-        'mood_score': session.mood_score or 7.5,
-        'overall_mood': 'Neutral',
-        'emotional_journey': {'start': 'Calm', 'end': 'Neutral', 'trend': 'stable'},
-        'primary_emotion': session.primary_emotion or 'calm',
-        'emotions': [
-            {'emotion': 'calm', 'percentage': 40},
-            {'emotion': 'happy', 'percentage': 30},
-            {'emotion': 'neutral', 'percentage': 20},
-            {'emotion': 'anxious', 'percentage': 10}
-        ],
-        'key_insights': [
-            {'icon': '🌙', 'title': 'Pola Tidur', 'description': 'Kualitas tidurmu cukup baik.'},
-            {'icon': '💪', 'title': 'Energi', 'description': 'Level energimu stabil.'},
-        ],
-        'summary': 'Kondisi mental secara keseluruhan baik.',
-        'recommendation': 'Lanjutkan aktivitas positif.',
-        'questions_answered': session.questions_answered or SESSION_LENGTH
+        'mood_score': round(mood_score, 1),
+        'overall_mood': overall_mood,
+        'emotional_journey': {
+            'start': 'Calm' if avg_score >= 3 else 'Low',
+            'end': overall_mood,
+            'trend': trend
+        },
+        'primary_emotion': primary_emotion,
+        'emotions': emotions,
+        'key_insights': key_insights,
+        'wellness_score': wellness_percentage,
+        'phq9_score': max(0, 27 - int(avg_score * 6.75)),  # Inverse scale
+        'gad7_score': max(0, 21 - int(avg_score * 5.25)),  # Inverse scale
+        'summary': summary,
+        'recommendation': recommendation,
+        'questions_answered': session.questions_answered or len(answers),
+        'created_at': session.created_at.isoformat() if session.created_at else None
     })
 
 # ============ Screening ============
