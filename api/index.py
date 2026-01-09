@@ -613,22 +613,30 @@ def session_insights(sid):
         running_score = ((running_score * i) + (a.score or 3)) / (i + 1)
         journey_points.append(round(running_score, 2))
     
-    # Determine mood level
-    if avg_score >= 4:
+    # Calculate negative emotion ratio for mood adjustment
+    num_answers = len(answers) or 1
+    negative_ratio = (emotion_counts.get('sad', 0) + emotion_counts.get('anxious', 0)) / num_answers
+    
+    # Determine mood level - consider BOTH avg_score AND emotion patterns
+    if avg_score >= 4 and negative_ratio < 0.2:
         overall_mood = 'Positive'
         trend = 'improving'
         mood_improvement = random.randint(15, 30)
         breakthrough = "Kamu menunjukkan kekuatan yang luar biasa dalam menjaga kesehatan mentalmu!"
-    elif avg_score >= 3:
+    elif avg_score >= 3 and negative_ratio < 0.3:
         overall_mood = 'Neutral'
         trend = 'stable'
         mood_improvement = random.randint(-5, 10)
         breakthrough = "Kesadaran diri adalah langkah penting dalam perjalanan kesehatan mental."
-    elif avg_score >= 2:
+    elif avg_score >= 2 or negative_ratio >= 0.3:
+        # Concerning if: avg < 3, OR if 30%+ responses are negative
         overall_mood = 'Concerning'
         trend = 'declining'
         mood_improvement = random.randint(-15, 0)
         breakthrough = "Berbagi perasaanmu adalah langkah berani menuju penyembuhan."
+        # Also use the more appropriate summary
+        if negative_ratio >= 0.4:
+            primary_emotion = 'anxious' if emotion_counts.get('anxious', 0) > emotion_counts.get('sad', 0) else 'sad'
     else:
         overall_mood = 'Needs Support'
         trend = 'needs_attention'
