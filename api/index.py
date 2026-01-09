@@ -77,14 +77,29 @@ class Session(db.Model):
     user = db.relationship('User', backref=db.backref('sessions', lazy=True))
     
     def to_dict(self):
+        # Determine mood based on mood_score
+        score = self.mood_score or 5
+        if score >= 8:
+            mood = 'happy'
+        elif score >= 6:
+            mood = 'calm'
+        elif score >= 4:
+            mood = 'neutral'
+        elif score >= 2:
+            mood = 'anxious'
+        else:
+            mood = 'sad'
+        
         return {
             'id': self.id,
-            'title': self.title,
+            'title': self.title or f'Sesi {self.created_at.strftime("%d %b %Y") if self.created_at else ""}',
             'status': self.status,
+            'mood': mood,
             'mood_score': self.mood_score,
-            'primary_emotion': self.primary_emotion,
+            'primary_emotion': self.primary_emotion or mood,
             'questions_answered': self.questions_answered,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'summary': 'Chat conversation'
         }
 
 class Answer(db.Model):
@@ -857,17 +872,18 @@ def observations():
     user_id = int(get_jwt_identity())
     sessions = Session.query.filter_by(user_id=user_id, status='completed').order_by(Session.created_at.desc()).limit(10).all()
     
-    observations = []
+    obs_list = []
     for s in sessions:
+        # Try to get score from answers first, fallback to session mood_score
         answers = Answer.query.filter_by(session_id=s.id).all()
-        if not answers:
-            continue
+        if answers:
+            total_score = sum(a.score or 3 for a in answers)
+            avg_score = total_score / len(answers)
+        else:
+            # Fallback to session mood_score (scale 0-10, convert to 1-5)
+            avg_score = (s.mood_score or 5) / 2
         
-        # Calculate session score
-        total_score = sum(a.score or 3 for a in answers)
-        avg_score = total_score / len(answers)
-        
-        # Generate observation based on analysis
+        # Generate observation based on score
         if avg_score >= 4:
             obs = {
                 'id': s.id,
@@ -882,7 +898,7 @@ def observations():
             obs = {
                 'id': s.id,
                 'type': 'neutral',
-                'title': 'Kondisi Stabil',
+                'title': 'Kondisi Stabil ⚖️',
                 'description': f'Sesi {s.created_at.strftime("%d %b")} menunjukkan keseimbangan emosional.',
                 'session_id': s.id,
                 'read': False,
@@ -892,7 +908,7 @@ def observations():
             obs = {
                 'id': s.id,
                 'type': 'pattern',
-                'title': 'Pola Perlu Perhatian',
+                'title': 'Pola Perlu Perhatian 💭',
                 'description': f'Ada tanda-tanda yang perlu diperhatikan pada sesi {s.created_at.strftime("%d %b")}.',
                 'session_id': s.id,
                 'read': False,
@@ -902,21 +918,21 @@ def observations():
             obs = {
                 'id': s.id,
                 'type': 'alert',
-                'title': 'Perhatian Diperlukan',
+                'title': 'Perhatian Diperlukan 💙',
                 'description': f'Sesi {s.created_at.strftime("%d %b")} menunjukkan kondisi yang memerlukan dukungan.',
                 'session_id': s.id,
                 'read': False,
                 'date': s.created_at.isoformat() if s.created_at else None
             }
-        observations.append(obs)
+        obs_list.append(obs)
     
-    # If no sessions, return encouraging message
-    if not observations:
-        observations = [
-            {'id': 0, 'type': 'info', 'title': 'Mulai Perjalananmu', 'description': 'Selesaikan sesi pertamamu untuk melihat AI observations.', 'read': False}
+    # If no sessions at all, return encouraging message
+    if not obs_list:
+        obs_list = [
+            {'id': 0, 'type': 'info', 'title': 'Mulai Perjalananmu 🌱', 'description': 'Selesaikan sesi pertamamu untuk melihat AI observations.', 'read': False}
         ]
     
-    return jsonify(observations)
+    return jsonify(obs_list)
 
 @app.route('/api/insights/observations/<int:oid>/read', methods=['POST'])
 @jwt_required()
