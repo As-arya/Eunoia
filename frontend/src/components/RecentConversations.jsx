@@ -153,8 +153,8 @@ const formatRelativeTime = (dateString) => {
 const RecentConversations = ({ onViewSession, onViewAll }) => {
     const { data, isLoading } = useRecentSessions(5)
 
-    // Use real data only - no demo fallback
-    const sessions = data?.sessions || []
+    // API returns array directly, not {sessions: [...]}
+    const sessions = Array.isArray(data) ? data : (data?.sessions || [])
 
     return (
         <div style={{ marginBottom: '32px' }}>
