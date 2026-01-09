@@ -1,43 +1,33 @@
 """
-Vercel Serverless Function - Flask API
+Vercel Serverless Function - Flask API for Euonia
 """
-from flask import Flask, jsonify, request, Response
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 import jwt
 from datetime import datetime, timedelta
 import os
 import hashlib
 
-# Create Flask app - Vercel looks for 'app' variable
 app = Flask(__name__)
+app.url_map.strict_slashes = False  # Allow with or without trailing slash
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'euonia-secret-key-2024')
 JWT_SECRET = os.environ.get('JWT_SECRET_KEY', 'euonia-jwt-secret-2024')
 
-# Enable CORS
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
-# In-memory storage (demo only - resets on cold start)
+# In-memory storage (demo - resets on cold start)
 USERS = {}
 
 def create_token(user_id, expires_hours=1):
-    payload = {
-        'sub': str(user_id),
-        'exp': datetime.utcnow() + timedelta(hours=expires_hours),
-        'iat': datetime.utcnow()
-    }
-    return jwt.encode(payload, JWT_SECRET, algorithm='HS256')
-
-def verify_token(token):
-    try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
-        return payload.get('sub')
-    except:
-        return None
+    return jwt.encode({'sub': str(user_id), 'exp': datetime.utcnow() + timedelta(hours=expires_hours)}, JWT_SECRET, algorithm='HS256')
 
 def get_user_id():
     auth = request.headers.get('Authorization', '')
     if auth.startswith('Bearer '):
-        return verify_token(auth[7:])
+        try:
+            return jwt.decode(auth[7:], JWT_SECRET, algorithms=['HS256']).get('sub')
+        except:
+            pass
     return None
 
 def auth_required(f):
@@ -56,36 +46,26 @@ def cors(response):
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
     return response
 
-# Health
+# ========== HEALTH ==========
 @app.route('/api/health')
 def health():
     return jsonify({'status': 'ok'})
 
-# Auth
+# ========== AUTH ==========
 @app.route('/api/auth/register', methods=['POST', 'OPTIONS'])
 def register():
     if request.method == 'OPTIONS':
         return '', 200
     try:
         data = request.get_json() or {}
-        name = data.get('name', '').strip()
-        email = data.get('email', '').strip().lower()
-        password = data.get('password', '')
-        
+        name, email, password = data.get('name', '').strip(), data.get('email', '').strip().lower(), data.get('password', '')
         if not all([name, email, password]):
             return jsonify({'error': 'All fields required'}), 400
         if email in USERS:
             return jsonify({'error': 'Email exists'}), 409
-        
         uid = len(USERS) + 1
         USERS[email] = {'id': uid, 'name': name, 'email': email, 'pw': hashlib.sha256(password.encode()).hexdigest()}
-        
-        return jsonify({
-            'message': 'Registered',
-            'user': {'id': uid, 'name': name, 'email': email},
-            'access_token': create_token(uid),
-            'refresh_token': create_token(uid, 720)
-        }), 201
+        return jsonify({'message': 'Registered', 'user': {'id': uid, 'name': name, 'email': email}, 'access_token': create_token(uid), 'refresh_token': create_token(uid, 720)}), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -95,25 +75,17 @@ def login():
         return '', 200
     try:
         data = request.get_json() or {}
-        email = data.get('email', '').strip().lower()
-        password = data.get('password', '')
-        
+        email, password = data.get('email', '').strip().lower(), data.get('password', '')
         user = USERS.get(email)
         if not user or user['pw'] != hashlib.sha256(password.encode()).hexdigest():
             return jsonify({'error': 'Invalid credentials'}), 401
-        
-        return jsonify({
-            'message': 'Login successful',
-            'user': {'id': user['id'], 'name': user['name'], 'email': user['email']},
-            'access_token': create_token(user['id']),
-            'refresh_token': create_token(user['id'], 720)
-        }), 200
+        return jsonify({'message': 'Login successful', 'user': {'id': user['id'], 'name': user['name'], 'email': user['email']}, 'access_token': create_token(user['id']), 'refresh_token': create_token(user['id'], 720)}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/auth/me')
 @auth_required
-def me(uid):
+def auth_me(uid):
     for u in USERS.values():
         if u['id'] == int(uid):
             return jsonify({'id': u['id'], 'name': u['name'], 'email': u['email']})
@@ -122,16 +94,29 @@ def me(uid):
 @app.route('/api/auth/refresh', methods=['POST'])
 def refresh():
     uid = get_user_id()
-    if not uid:
-        return jsonify({'error': 'Invalid token'}), 401
-    return jsonify({'access_token': create_token(uid)})
+    return jsonify({'access_token': create_token(uid)}) if uid else (jsonify({'error': 'Invalid'}), 401)
 
 @app.route('/api/auth/logout', methods=['POST'])
 def logout():
     return jsonify({'message': 'Logged out'})
 
-# User
-@app.route('/api/users/profile')
+# ========== USERS (frontend calls /users/me) ==========
+@app.route('/api/users/me', methods=['GET', 'PUT', 'OPTIONS'])
+@auth_required
+def users_me(uid):
+    if request.method == 'OPTIONS':
+        return '', 200
+    for u in USERS.values():
+        if u['id'] == int(uid):
+            return jsonify({'id': u['id'], 'name': u['name'], 'email': u['email'], 'completedSessions': 0, 'streak': 0, 'joinDate': '2024-01-01'})
+    return jsonify({'error': 'Not found'}), 404
+
+@app.route('/api/users/me/preferences', methods=['GET', 'PUT'])
+@auth_required
+def preferences(uid):
+    return jsonify({'theme': 'dark', 'notifications': True})
+
+@app.route('/api/users/profile', methods=['GET', 'PUT'])
 @auth_required
 def profile(uid):
     for u in USERS.values():
@@ -139,33 +124,56 @@ def profile(uid):
             return jsonify({'id': u['id'], 'name': u['name'], 'email': u['email'], 'completedSessions': 0, 'streak': 0, 'joinDate': '2024-01-01'})
     return jsonify({'error': 'Not found'}), 404
 
-# Sessions
-@app.route('/api/sessions')
+# ========== SESSIONS ==========
+@app.route('/api/sessions', methods=['GET', 'POST', 'OPTIONS'])
 @auth_required
 def sessions(uid):
+    if request.method == 'OPTIONS':
+        return '', 200
+    if request.method == 'POST':
+        return jsonify({'id': 1, 'status': 'active', 'messages': [], 'title': 'New Session', 'created_at': datetime.utcnow().isoformat()}), 201
+    return jsonify({'sessions': [], 'total': 0, 'page': 1, 'per_page': 20})
+
+@app.route('/api/sessions/recent', methods=['GET'])
+@auth_required
+def recent_sessions(uid):
     return jsonify([])
 
-@app.route('/api/sessions', methods=['POST'])
+@app.route('/api/sessions/<int:sid>', methods=['GET', 'DELETE'])
 @auth_required
-def create_session(uid):
-    return jsonify({'id': 1, 'status': 'active', 'messages': []}), 201
+def session_detail(uid, sid):
+    if request.method == 'DELETE':
+        return jsonify({'message': 'Deleted'})
+    return jsonify({'id': sid, 'status': 'completed', 'messages': [], 'summary': 'Demo session', 'created_at': '2024-01-01T00:00:00Z', 'title': 'Session'})
 
-@app.route('/api/sessions/<int:sid>')
+@app.route('/api/sessions/<int:sid>/messages', methods=['GET', 'POST'])
 @auth_required
-def get_session(uid, sid):
-    return jsonify({'id': sid, 'status': 'completed', 'messages': [], 'summary': 'Demo', 'created_at': '2024-01-01T00:00:00Z'})
+def messages(uid, sid):
+    if request.method == 'POST':
+        return jsonify({'id': 1, 'content': 'This is a demo response. Full AI chatbot requires complete backend.', 'role': 'assistant', 'session_id': sid}), 201
+    return jsonify([])
 
-@app.route('/api/sessions/<int:sid>/messages', methods=['POST'])
+@app.route('/api/sessions/<int:sid>/end', methods=['POST'])
 @auth_required
-def send_msg(uid, sid):
-    return jsonify({'id': 1, 'content': 'Demo response', 'role': 'assistant', 'session_id': sid}), 201
+def end_session(uid, sid):
+    return jsonify({'id': sid, 'status': 'completed', 'summary': 'Session completed'})
 
-# Screening
+@app.route('/api/sessions/<int:sid>/insights', methods=['GET'])
+@auth_required
+def session_insights(uid, sid):
+    return jsonify({'session_id': sid, 'mood_score': 7, 'emotions': [], 'recommendations': []})
+
+# ========== SCREENING ==========
 @app.route('/api/screening/questions')
 def questions():
-    return jsonify([{'id': 1, 'text': 'How are you feeling?', 'category': 'mood'}])
+    return jsonify([{'id': 1, 'text': 'How are you feeling today?', 'category': 'mood'}])
 
-# Insights
+@app.route('/api/screening/submit', methods=['POST'])
+@auth_required
+def submit_screening(uid):
+    return jsonify({'score': 75, 'level': 'moderate', 'recommendations': []})
+
+# ========== INSIGHTS ==========
 @app.route('/api/insights/dashboard')
 @auth_required
 def dashboard(uid):
@@ -191,9 +199,9 @@ def observations(uid):
 def mark_read(uid, oid):
     return jsonify({'success': True})
 
-# Catch-all
+# ========== CATCH-ALL ==========
 @app.route('/api/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 def catch_all(path):
     if request.method == 'OPTIONS':
         return '', 200
-    return jsonify({'error': f'Not found: /api/{path}'}), 404
+    return jsonify({'error': f'Endpoint /api/{path} not found'}), 404
