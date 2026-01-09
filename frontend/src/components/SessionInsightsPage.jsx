@@ -111,13 +111,15 @@ const SessionInsightsPage = ({ sessionId, onBack, onContinueChat }) => {
     }
 
     // Use fetched data or fallbacks for display
-    const sessionDate = session?.started_at || session?.created_at
-    const duration = session?.duration || 0
-    const mood = session?.mood || 'Neutral'
+    const sessionDate = session?.started_at || session?.created_at || insights?.created_at
+    const duration = session?.duration || insights?.questions_answered || 0
+    const mood = insights?.overall_mood || session?.mood || 'Neutral'
     const summary = insights?.summary || session?.summary || 'No summary available for this session.'
-    const primaryTrigger = insights?.primary_trigger || 'No trigger identified'
-    const breakthrough = insights?.breakthrough || 'Keep exploring your thoughts'
+    const primaryTrigger = insights?.primary_emotion || insights?.primary_trigger || 'No trigger identified'
+    const recommendation = insights?.recommendation || 'Keep exploring your thoughts'
     const moodImprovement = insights?.mood_improvement || 0
+    const keyInsights = insights?.key_insights || []
+    const wellnessScore = insights?.wellness_score || 50
 
     return (
         <div style={{ paddingBottom: '100px' }}>
@@ -289,19 +291,32 @@ const SessionInsightsPage = ({ sessionId, onBack, onContinueChat }) => {
             {/* Key Insights */}
             <h2 style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '16px', letterSpacing: '0.05em' }}>KEY INSIGHTS</h2>
 
-            <InsightCard
-                icon={<AlertTriangle size={24} color="#f97316" />}
-                iconBg="rgba(249, 115, 22, 0.1)"
-                title="Primary Trigger"
-                description={primaryTrigger}
-            />
-
-            <InsightCard
-                icon={<Lightbulb size={24} color="#a78bfa" />}
-                iconBg="rgba(167, 139, 250, 0.1)"
-                title="Breakthrough Moment"
-                description={breakthrough}
-            />
+            {keyInsights.length > 0 ? (
+                keyInsights.map((insight, index) => (
+                    <InsightCard
+                        key={index}
+                        icon={<span style={{ fontSize: '24px' }}>{insight.icon || '💡'}</span>}
+                        iconBg={index === 0 ? 'rgba(249, 115, 22, 0.1)' : index === 1 ? 'rgba(167, 139, 250, 0.1)' : 'rgba(43, 253, 184, 0.1)'}
+                        title={insight.title || 'Insight'}
+                        description={insight.description || 'No description'}
+                    />
+                ))
+            ) : (
+                <>
+                    <InsightCard
+                        icon={<AlertTriangle size={24} color="#f97316" />}
+                        iconBg="rgba(249, 115, 22, 0.1)"
+                        title="Primary Emotion"
+                        description={primaryTrigger}
+                    />
+                    <InsightCard
+                        icon={<Lightbulb size={24} color="#a78bfa" />}
+                        iconBg="rgba(167, 139, 250, 0.1)"
+                        title="Recommendation"
+                        description={recommendation}
+                    />
+                </>
+            )}
 
             {/* Continue Button */}
             <div style={{
