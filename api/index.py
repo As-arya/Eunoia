@@ -411,6 +411,7 @@ def session_insights(sid):
     answers = Answer.query.filter_by(session_id=sid).all()
     
     # Calculate actual scores from answers
+    # Score 5 = best (positive), Score 1 = worst (needs support)
     if answers:
         total_score = sum(a.score or 3 for a in answers)
         avg_score = total_score / len(answers)
@@ -418,6 +419,7 @@ def session_insights(sid):
         wellness_percentage = int((total_score / max_possible) * 100)
         mood_score = avg_score * 2  # Scale to 10
     else:
+        total_score = 0
         avg_score = 3
         wellness_percentage = 60
         mood_score = session.mood_score or 6
@@ -506,12 +508,19 @@ def session_insights(sid):
         'emotions': emotions,
         'key_insights': key_insights,
         'wellness_score': wellness_percentage,
-        'phq9_score': max(0, 27 - int(avg_score * 6.75)),  # Inverse scale
-        'gad7_score': max(0, 21 - int(avg_score * 5.25)),  # Inverse scale
+        'phq9_score': max(0, 27 - int(avg_score * 6.75)),
+        'gad7_score': max(0, 21 - int(avg_score * 5.25)),
         'summary': summary,
         'recommendation': recommendation,
         'questions_answered': session.questions_answered or len(answers),
-        'created_at': session.created_at.isoformat() if session.created_at else None
+        'created_at': session.created_at.isoformat() if session.created_at else None,
+        # Debug info
+        '_debug': {
+            'total_answers': len(answers),
+            'total_score': total_score,
+            'avg_score': round(avg_score, 2),
+            'individual_scores': [a.score for a in answers]
+        }
     })
 
 # ============ Screening ============
