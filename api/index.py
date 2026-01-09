@@ -100,60 +100,127 @@ class Answer(db.Model):
 with app.app_context():
     db.create_all()
 
-# ============ Demo Data ============
+# ============ PHQ-9/GAD-7 Based Questions (26 questions) ============
 DEMO_QUESTIONS = [
-    {'id': 1, 'text': 'Bagaimana perasaanmu hari ini?', 'category': 'mood', 'options': [
-        {'id': 1, 'text': 'Sangat Baik 😊', 'score': 5}, {'id': 2, 'text': 'Baik', 'score': 4},
-        {'id': 3, 'text': 'Biasa Saja', 'score': 3}, {'id': 4, 'text': 'Kurang Baik', 'score': 2}, {'id': 5, 'text': 'Buruk 😔', 'score': 1}
+    {'id': 1, 'text': 'Hai! Aku senang bisa berbicara denganmu. Bagaimana perasaanmu saat ini?', 'category': 'Opening', 'options': [
+        {'id': 1, 'text': 'Luar biasa baik! 😊', 'score': 5}, {'id': 2, 'text': 'Biasa saja', 'score': 3},
+        {'id': 3, 'text': 'Kurang baik...', 'score': 2}, {'id': 4, 'text': 'Sangat tidak baik', 'score': 1}
     ]},
-    {'id': 2, 'text': 'Bagaimana kualitas tidurmu semalam?', 'category': 'sleep', 'options': [
-        {'id': 1, 'text': 'Sangat Nyenyak', 'score': 5}, {'id': 2, 'text': 'Nyenyak', 'score': 4},
-        {'id': 3, 'text': 'Cukup', 'score': 3}, {'id': 4, 'text': 'Kurang Nyenyak', 'score': 2}, {'id': 5, 'text': 'Tidak Bisa Tidur', 'score': 1}
+    {'id': 2, 'text': 'Dalam 2 minggu terakhir, seberapa sering kamu merasa minat atau kesenangan berkurang?', 'category': 'Depression', 'options': [
+        {'id': 1, 'text': 'Tidak pernah', 'score': 5}, {'id': 2, 'text': 'Beberapa hari', 'score': 4},
+        {'id': 3, 'text': 'Lebih dari setengah waktu', 'score': 2}, {'id': 4, 'text': 'Hampir setiap hari', 'score': 1}
     ]},
-    {'id': 3, 'text': 'Seberapa sering kamu merasa cemas?', 'category': 'anxiety', 'options': [
-        {'id': 1, 'text': 'Tidak Pernah', 'score': 5}, {'id': 2, 'text': 'Jarang', 'score': 4},
-        {'id': 3, 'text': 'Kadang-kadang', 'score': 3}, {'id': 4, 'text': 'Sering', 'score': 2}, {'id': 5, 'text': 'Sangat Sering', 'score': 1}
+    {'id': 3, 'text': 'Seberapa sering kamu merasa down, sedih, atau putus asa?', 'category': 'Depression', 'options': [
+        {'id': 1, 'text': 'Tidak pernah', 'score': 5}, {'id': 2, 'text': 'Beberapa hari', 'score': 4},
+        {'id': 3, 'text': 'Lebih dari setengah waktu', 'score': 2}, {'id': 4, 'text': 'Hampir setiap hari', 'score': 1}
     ]},
-    {'id': 4, 'text': 'Apakah kamu merasa berenergi?', 'category': 'energy', 'options': [
-        {'id': 1, 'text': 'Sangat Berenergi', 'score': 5}, {'id': 2, 'text': 'Cukup', 'score': 4},
-        {'id': 3, 'text': 'Normal', 'score': 3}, {'id': 4, 'text': 'Kurang', 'score': 2}, {'id': 5, 'text': 'Sangat Lelah', 'score': 1}
+    {'id': 4, 'text': 'Bagaimana dengan tidurmu? Apakah kamu kesulitan tidur atau justru tidur terlalu banyak?', 'category': 'Sleep', 'options': [
+        {'id': 1, 'text': 'Tidur normal', 'score': 5}, {'id': 2, 'text': 'Kadang susah tidur', 'score': 4},
+        {'id': 3, 'text': 'Sering bermasalah', 'score': 2}, {'id': 4, 'text': 'Hampir selalu bermasalah', 'score': 1}
     ]},
-    {'id': 5, 'text': 'Bagaimana hubungan sosialmu?', 'category': 'social', 'options': [
-        {'id': 1, 'text': 'Sangat Baik', 'score': 5}, {'id': 2, 'text': 'Baik', 'score': 4},
-        {'id': 3, 'text': 'Biasa Saja', 'score': 3}, {'id': 4, 'text': 'Kurang', 'score': 2}, {'id': 5, 'text': 'Buruk', 'score': 1}
+    {'id': 5, 'text': 'Seberapa sering kamu merasa lelah atau kehilangan energi?', 'category': 'Energy', 'options': [
+        {'id': 1, 'text': 'Energi baik', 'score': 5}, {'id': 2, 'text': 'Kadang lelah', 'score': 4},
+        {'id': 3, 'text': 'Sering lelah', 'score': 2}, {'id': 4, 'text': 'Selalu lelah', 'score': 1}
     ]},
-    {'id': 6, 'text': 'Apakah kamu bisa mengelola stres?', 'category': 'stress', 'options': [
-        {'id': 1, 'text': 'Sangat Mampu', 'score': 5}, {'id': 2, 'text': 'Mampu', 'score': 4},
-        {'id': 3, 'text': 'Kadang Sulit', 'score': 3}, {'id': 4, 'text': 'Sulit', 'score': 2}, {'id': 5, 'text': 'Tidak Mampu', 'score': 1}
+    {'id': 6, 'text': 'Apakah kamu pernah merasa buruk tentang dirimu sendiri?', 'category': 'Self', 'options': [
+        {'id': 1, 'text': 'Tidak', 'score': 5}, {'id': 2, 'text': 'Kadang-kadang', 'score': 4},
+        {'id': 3, 'text': 'Sering', 'score': 2}, {'id': 4, 'text': 'Hampir selalu', 'score': 1}
     ]},
-    {'id': 7, 'text': 'Seberapa puas dengan hidupmu?', 'category': 'satisfaction', 'options': [
-        {'id': 1, 'text': 'Sangat Puas', 'score': 5}, {'id': 2, 'text': 'Puas', 'score': 4},
-        {'id': 3, 'text': 'Cukup', 'score': 3}, {'id': 4, 'text': 'Kurang', 'score': 2}, {'id': 5, 'text': 'Tidak Puas', 'score': 1}
+    {'id': 7, 'text': 'Apakah kamu kesulitan berkonsentrasi pada hal-hal seperti membaca atau bekerja?', 'category': 'Focus', 'options': [
+        {'id': 1, 'text': 'Tidak ada masalah', 'score': 5}, {'id': 2, 'text': 'Kadang sulit', 'score': 4},
+        {'id': 3, 'text': 'Sering sulit', 'score': 2}, {'id': 4, 'text': 'Hampir tidak bisa konsentrasi', 'score': 1}
     ]},
-    {'id': 8, 'text': 'Apakah kamu termotivasi?', 'category': 'motivation', 'options': [
-        {'id': 1, 'text': 'Sangat Termotivasi', 'score': 5}, {'id': 2, 'text': 'Termotivasi', 'score': 4},
-        {'id': 3, 'text': 'Biasa', 'score': 3}, {'id': 4, 'text': 'Kurang', 'score': 2}, {'id': 5, 'text': 'Tidak', 'score': 1}
+    {'id': 8, 'text': 'Seberapa sering kamu merasa nervous, cemas, atau was-was?', 'category': 'Anxiety', 'options': [
+        {'id': 1, 'text': 'Tidak pernah', 'score': 5}, {'id': 2, 'text': 'Beberapa hari', 'score': 4},
+        {'id': 3, 'text': 'Lebih dari setengah waktu', 'score': 2}, {'id': 4, 'text': 'Hampir setiap hari', 'score': 1}
     ]},
-    {'id': 9, 'text': 'Apakah kamu merasa kesepian?', 'category': 'loneliness', 'options': [
-        {'id': 1, 'text': 'Tidak Pernah', 'score': 5}, {'id': 2, 'text': 'Jarang', 'score': 4},
-        {'id': 3, 'text': 'Kadang', 'score': 3}, {'id': 4, 'text': 'Sering', 'score': 2}, {'id': 5, 'text': 'Selalu', 'score': 1}
+    {'id': 9, 'text': 'Apakah kamu tidak bisa menghentikan atau mengontrol kekhawatiranmu?', 'category': 'Anxiety', 'options': [
+        {'id': 1, 'text': 'Tidak', 'score': 5}, {'id': 2, 'text': 'Kadang', 'score': 4},
+        {'id': 3, 'text': 'Sering', 'score': 2}, {'id': 4, 'text': 'Hampir selalu', 'score': 1}
     ]},
-    {'id': 10, 'text': 'Bagaimana fokusmu akhir-akhir ini?', 'category': 'focus', 'options': [
-        {'id': 1, 'text': 'Sangat Fokus', 'score': 5}, {'id': 2, 'text': 'Fokus', 'score': 4},
-        {'id': 3, 'text': 'Normal', 'score': 3}, {'id': 4, 'text': 'Sulit', 'score': 2}, {'id': 5, 'text': 'Tidak Bisa', 'score': 1}
+    {'id': 10, 'text': 'Seberapa sulit bagimu untuk rileks?', 'category': 'Anxiety', 'options': [
+        {'id': 1, 'text': 'Mudah rileks', 'score': 5}, {'id': 2, 'text': 'Agak sulit', 'score': 4},
+        {'id': 3, 'text': 'Sulit', 'score': 2}, {'id': 4, 'text': 'Sangat sulit/tidak bisa', 'score': 1}
+    ]},
+    {'id': 11, 'text': 'Apakah kamu mudah merasa kesal atau irritable?', 'category': 'Anxiety', 'options': [
+        {'id': 1, 'text': 'Tidak', 'score': 5}, {'id': 2, 'text': 'Kadang', 'score': 4},
+        {'id': 3, 'text': 'Sering', 'score': 2}, {'id': 4, 'text': 'Hampir selalu', 'score': 1}
+    ]},
+    {'id': 12, 'text': 'Ketika menghadapi tekanan, bagaimana biasanya kamu mengatasinya?', 'category': 'Stress', 'options': [
+        {'id': 1, 'text': 'Bisa mengelola dengan baik', 'score': 5}, {'id': 2, 'text': 'Berusaha mencari cara', 'score': 4},
+        {'id': 3, 'text': 'Sering merasa kewalahan', 'score': 2}, {'id': 4, 'text': 'Sangat sulit mengatasinya', 'score': 1}
+    ]},
+    {'id': 13, 'text': 'Apakah kamu merasa memiliki seseorang yang bisa kamu ajak bicara?', 'category': 'Social', 'options': [
+        {'id': 1, 'text': 'Ya, banyak', 'score': 5}, {'id': 2, 'text': 'Ya, ada beberapa', 'score': 4},
+        {'id': 3, 'text': 'Hanya satu atau dua orang', 'score': 2}, {'id': 4, 'text': 'Tidak ada', 'score': 1}
+    ]},
+    {'id': 14, 'text': 'Seberapa sulit masalah-masalah ini membuatmu menjalankan pekerjaan atau bergaul?', 'category': 'Functional', 'options': [
+        {'id': 1, 'text': 'Tidak sulit sama sekali', 'score': 5}, {'id': 2, 'text': 'Agak sulit', 'score': 4},
+        {'id': 3, 'text': 'Sangat sulit', 'score': 2}, {'id': 4, 'text': 'Extremely sulit', 'score': 1}
+    ]},
+    {'id': 15, 'text': 'Apakah nafsu makanmu berubah akhir-akhir ini?', 'category': 'Depression', 'options': [
+        {'id': 1, 'text': 'Normal', 'score': 5}, {'id': 2, 'text': 'Sedikit berubah', 'score': 4},
+        {'id': 3, 'text': 'Cukup berubah', 'score': 2}, {'id': 4, 'text': 'Sangat berubah', 'score': 1}
+    ]},
+    {'id': 16, 'text': 'Apakah kamu merasa sulit mengambil keputusan atau berpikir jernih?', 'category': 'Depression', 'options': [
+        {'id': 1, 'text': 'Tidak', 'score': 5}, {'id': 2, 'text': 'Kadang', 'score': 4},
+        {'id': 3, 'text': 'Sering', 'score': 2}, {'id': 4, 'text': 'Hampir selalu', 'score': 1}
+    ]},
+    {'id': 17, 'text': 'Apakah kamu merasa gerakan atau bicaramu melambat, atau sebaliknya lebih gelisah?', 'category': 'Energy', 'options': [
+        {'id': 1, 'text': 'Normal', 'score': 5}, {'id': 2, 'text': 'Sedikit', 'score': 4},
+        {'id': 3, 'text': 'Cukup terasa', 'score': 2}, {'id': 4, 'text': 'Sangat terasa', 'score': 1}
+    ]},
+    {'id': 18, 'text': 'Apakah kamu sering terbangun di tengah malam dan sulit tidur kembali?', 'category': 'Sleep', 'options': [
+        {'id': 1, 'text': 'Tidak pernah', 'score': 5}, {'id': 2, 'text': 'Jarang', 'score': 4},
+        {'id': 3, 'text': 'Sering', 'score': 2}, {'id': 4, 'text': 'Hampir setiap malam', 'score': 1}
+    ]},
+    {'id': 19, 'text': 'Apakah kamu sering merasa seolah akan terjadi sesuatu yang buruk?', 'category': 'Anxiety', 'options': [
+        {'id': 1, 'text': 'Tidak', 'score': 5}, {'id': 2, 'text': 'Kadang', 'score': 4},
+        {'id': 3, 'text': 'Sering', 'score': 2}, {'id': 4, 'text': 'Hampir selalu', 'score': 1}
+    ]},
+    {'id': 20, 'text': 'Apakah kamu mengalami gejala fisik seperti jantung berdebar atau gemetar saat cemas?', 'category': 'Anxiety', 'options': [
+        {'id': 1, 'text': 'Tidak', 'score': 5}, {'id': 2, 'text': 'Kadang', 'score': 4},
+        {'id': 3, 'text': 'Sering', 'score': 2}, {'id': 4, 'text': 'Hampir selalu', 'score': 1}
+    ]},
+    {'id': 21, 'text': 'Apakah kamu merasa waktu tidak pernah cukup untuk tugasmu?', 'category': 'Stress', 'options': [
+        {'id': 1, 'text': 'Tidak', 'score': 5}, {'id': 2, 'text': 'Kadang', 'score': 4},
+        {'id': 3, 'text': 'Sering', 'score': 2}, {'id': 4, 'text': 'Hampir selalu', 'score': 1}
+    ]},
+    {'id': 22, 'text': 'Bagaimana hubunganmu dengan orang-orang terdekat akhir-akhir ini?', 'category': 'Stress', 'options': [
+        {'id': 1, 'text': 'Baik', 'score': 5}, {'id': 2, 'text': 'Agak tegang', 'score': 4},
+        {'id': 3, 'text': 'Cukup bermasalah', 'score': 2}, {'id': 4, 'text': 'Sangat bermasalah', 'score': 1}
+    ]},
+    {'id': 23, 'text': 'Apakah kamu merasa kesepian meskipun dikelilingi orang?', 'category': 'Social', 'options': [
+        {'id': 1, 'text': 'Tidak', 'score': 5}, {'id': 2, 'text': 'Kadang', 'score': 4},
+        {'id': 3, 'text': 'Sering', 'score': 2}, {'id': 4, 'text': 'Hampir selalu', 'score': 1}
+    ]},
+    {'id': 24, 'text': 'Seberapa sering kamu menghindari aktivitas sosial karena perasaanmu?', 'category': 'Social', 'options': [
+        {'id': 1, 'text': 'Tidak pernah', 'score': 5}, {'id': 2, 'text': 'Kadang', 'score': 4},
+        {'id': 3, 'text': 'Sering', 'score': 2}, {'id': 4, 'text': 'Hampir selalu', 'score': 1}
+    ]},
+    {'id': 25, 'text': 'Apakah kamu memiliki aktivitas yang membuatmu merasa tenang dan bahagia?', 'category': 'Self', 'options': [
+        {'id': 1, 'text': 'Ya, banyak', 'score': 5}, {'id': 2, 'text': 'Ya, beberapa', 'score': 4},
+        {'id': 3, 'text': 'Sedikit', 'score': 2}, {'id': 4, 'text': 'Tidak ada', 'score': 1}
+    ]},
+    {'id': 26, 'text': 'Terakhir, apakah kamu tertarik untuk berbicara dengan profesional kesehatan mental?', 'category': 'Closing', 'options': [
+        {'id': 1, 'text': 'Ya, saya ingin', 'score': 5}, {'id': 2, 'text': 'Mungkin, masih ragu', 'score': 4},
+        {'id': 3, 'text': 'Belum siap', 'score': 2}, {'id': 4, 'text': 'Tidak perlu', 'score': 1}
     ]},
 ]
 
 EMPATHY_RESPONSES = [
-    "Terima kasih sudah berbagi. Perasaanmu valid. 💙",
-    "Aku mendengarmu. Kamu tidak sendirian. 🌟",
-    "Terima kasih sudah jujur denganku. 💫",
-    "Perasaanmu penting. Aku menghargai keterbukaanmu. 💚",
-    "Setiap langkah kecil adalah kemajuan. 🌈",
+    "Terima kasih sudah berbagi. Perasaanmu valid dan aku menghargai keterbukaanmu. 💙",
+    "Aku mendengarmu. Penting untuk mengakui perasaan kita, apapun itu. 🌟",
+    "Terima kasih sudah jujur. Setiap perasaan adalah bagian dari perjalananmu. 💫",
+    "Aku senang kamu mau berbagi. Kamu tidak sendirian dalam perjalanan ini. 🤗",
+    "Perasaanmu penting. Terima kasih sudah mempercayakannya padaku. 💚",
+    "Aku menghargai kejujuranmu. Mari kita lanjutkan eksplorasi bersama. ✨",
+    "Setiap langkah kecil menuju kesadaran diri adalah kemajuan. Kamu hebat! 🌈",
+    "Terima kasih sudah terbuka. Refleksi diri adalah tanda kekuatan. 💪",
 ]
 
-SESSION_LENGTH = 10
-EMOTIONS = ['calm', 'happy', 'neutral', 'anxious', 'sad']
+SESSION_LENGTH = 25  # 25 questions per session
+EMOTIONS = ['calm', 'happy', 'neutral', 'anxious', 'sad', 'stressed', 'hopeful']
 
 # ============ CORS ============
 @app.after_request
