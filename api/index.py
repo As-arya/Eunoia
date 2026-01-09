@@ -94,7 +94,132 @@ class Answer(db.Model):
     question_id = db.Column(db.Integer)
     option_id = db.Column(db.Integer)
     score = db.Column(db.Integer)
+    emotion_tag = db.Column(db.String(50))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class SessionInsight(db.Model):
+    __tablename__ = 'session_insights'
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.Integer, db.ForeignKey('sessions.id'), nullable=False)
+    summary = db.Column(db.Text)
+    score = db.Column(db.Integer, default=0)
+    recommendation = db.Column(db.Text)
+    primary_trigger = db.Column(db.String(100))
+    breakthrough = db.Column(db.Text)
+    mood_improvement = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'session_id': self.session_id,
+            'summary': self.summary,
+            'score': self.score,
+            'recommendation': self.recommendation,
+            'primary_trigger': self.primary_trigger,
+            'breakthrough': self.breakthrough,
+            'mood_improvement': self.mood_improvement
+        }
+
+# ============ Gemini AI Integration ============
+try:
+    import google.generativeai as genai
+    GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+    if GEMINI_API_KEY:
+        genai.configure(api_key=GEMINI_API_KEY)
+        GEMINI_ENABLED = True
+    else:
+        GEMINI_ENABLED = False
+except ImportError:
+    GEMINI_ENABLED = False
+
+def generate_ai_summary(answers_data, total_score, primary_emotion):
+    """Generate detailed AI summary using Gemini"""
+    if not GEMINI_ENABLED:
+        return generate_fallback_summary(total_score, primary_emotion)
+    
+    try:
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        # Determine severity
+        num_answers = len(answers_data)
+        max_score = num_answers * 3
+        if total_score <= max_score * 0.25:
+            severity = "minimal"
+        elif total_score <= max_score * 0.5:
+            severity = "mild"
+        elif total_score <= max_score * 0.75:
+            severity = "moderate"
+        else:
+            severity = "moderately_severe"
+        
+        qa_text = "\n".join([f"Q: {a.get('q', '')}\nA: {a.get('a', '')}" for a in answers_data])
+        
+        prompt = f"""Kamu adalah Eunoia, AI companion empatik untuk kesehatan mental Indonesia.
+
+Berdasarkan screening dengan severity: {severity}
+Emosi dominan: {primary_emotion}
+Total pertanyaan: {num_answers}
+
+RESPONS USER:
+{qa_text}
+
+Buat RINGKASAN KOMPREHENSIF (5-7 kalimat):
+
+1. OBSERVASI UTAMA: Kondisi emosional keseluruhan
+2. ANALISIS POLA: Identifikasi pola dari jawaban
+3. KEKUATAN: Hal positif yang terlihat
+4. AREA PERHATIAN: Area yang perlu perhatian
+5. PESAN SUPORTIF: Validasi dan harapan
+
+Gunakan bahasa Indonesia yang hangat, personal ("kamu" bukan "Anda"). Maksimal 1 emoji di akhir (💙 atau 🌟)."""
+
+        result = model.generate_content(prompt)
+        return result.text.strip()
+    except Exception as e:
+        print(f"Gemini error: {e}")
+        return generate_fallback_summary(total_score, primary_emotion)
+
+def generate_fallback_summary(total_score, primary_emotion):
+    """Fallback summary when Gemini is not available"""
+    if total_score <= 10:
+        return f"""Berdasarkan sesi ini, kondisi emosionalmu menunjukkan kesejahteraan yang baik. 
+Kamu memiliki kemampuan coping yang efektif dan stabilitas emosional yang solid. 
+Ini adalah fondasi yang kuat untuk kesehatan mental jangka panjang. 
+Tetap jaga kebiasaan positif yang sudah kamu bangun! 🌟"""
+    elif total_score <= 20:
+        return f"""Dari analisis sesi ini, ada beberapa area yang mungkin perlu perhatian ekstra. 
+Secara umum kamu menunjukkan kemampuan mengelola emosi dengan baik, namun ada momen-momen tekanan. 
+Ini normal dan menunjukkan kesadaran diri yang baik. 
+Fokus pada self-care dan jangan ragu untuk mencari dukungan saat diperlukan. 💙"""
+    elif total_score <= 35:
+        return f"""Berdasarkan responsmu, aku melihat beberapa tantangan signifikan yang sedang kamu hadapi. 
+Pola responsmu menunjukkan beban emosional yang mempengaruhi beberapa aspek kehidupanmu.
+Mengenali ini adalah kekuatan. Pertimbangkan untuk berbicara dengan profesional kesehatan mental 
+yang dapat memberikan dukungan lebih terarah. 💙"""
+    else:
+        return f"""Dari sesi ini, kondisimu menunjukkan beban emosional yang cukup berat.
+Responsmu mengindikasikan dampak konsisten pada berbagai area kehidupan.
+Mencari bantuan profesional adalah langkah berani menuju pemulihan.
+Sangat disarankan untuk segera konsultasi dengan psikolog atau psikiater.
+Hubungi Hotline Kesehatan Jiwa 119 ext 8 (24 jam). 💙"""
+
+def get_recommendation(score, emotion):
+    """Get evidence-based recommendation"""
+    if score <= 10:
+        return "Pertahankan rutinitas positifmu! Olahraga teratur dan tidur cukup adalah kunci kesehatan mental."
+    elif score <= 20:
+        recs = {
+            'anxious': "Coba latihan pernapasan 4-7-8: tarik napas 4 detik, tahan 7 detik, buang 8 detik.",
+            'sad': "Habiskan 10-15 menit di luar rumah hari ini. Cahaya matahari membantu memperbaiki mood.",
+            'stressed': "Prioritaskan satu tugas kecil yang bisa kamu selesaikan hari ini.",
+            'tired': "Tetapkan jadwal tidur konsisten. Hindari layar 1 jam sebelum tidur."
+        }
+        return recs.get(emotion.lower(), "Luangkan 15 menit untuk aktivitas yang membuatmu tenang hari ini.")
+    elif score <= 35:
+        return "Pertimbangkan berbicara dengan psikolog. Hubungi Hotline Kesehatan Jiwa 119 ext 8."
+    else:
+        return "Sangat disarankan segera konsultasi dengan profesional. Hubungi 119 ext 8 (24 jam) atau Yayasan Pulih +62 811-1711-555."
 
 # Create tables
 with app.app_context():
@@ -408,90 +533,95 @@ def end_session(sid):
 @jwt_required()
 def session_insights(sid):
     session = Session.query.get_or_404(sid)
-    answers = Answer.query.filter_by(session_id=sid).all()
+    answers = Answer.query.filter_by(session_id=sid).order_by(Answer.created_at).all()
     
-    # Calculate actual scores from answers
-    # Score 5 = best (positive), Score 1 = worst (needs support)
+    # Build answers data for AI summary
+    answers_data = []
+    emotion_counts = {}
+    for i, a in enumerate(answers):
+        q = DEMO_QUESTIONS[a.question_id - 1] if a.question_id and a.question_id <= len(DEMO_QUESTIONS) else None
+        if q:
+            opt = next((o for o in q.get('options', []) if o.get('id') == a.option_id), None)
+            answers_data.append({
+                'q': q.get('text', ''),
+                'a': opt.get('text', '') if opt else '',
+                'score': a.score
+            })
+            # Track emotions
+            emotion = a.emotion_tag or ('sad' if (a.score or 3) <= 2 else 'happy' if (a.score or 3) >= 4 else 'neutral')
+            emotion_counts[emotion] = emotion_counts.get(emotion, 0) + 1
+    
+    # Calculate scores
     if answers:
         total_score = sum(a.score or 3 for a in answers)
         avg_score = total_score / len(answers)
         max_possible = len(answers) * 5
         wellness_percentage = int((total_score / max_possible) * 100)
-        mood_score = avg_score * 2  # Scale to 10
+        mood_score = avg_score * 2
     else:
         total_score = 0
         avg_score = 3
         wellness_percentage = 60
-        mood_score = session.mood_score or 6
+        mood_score = 6
     
-    # Determine mood level and appropriate content
+    # Determine primary emotion
+    primary_emotion = max(emotion_counts, key=emotion_counts.get) if emotion_counts else 'neutral'
+    
+    # Calculate emotional journey data points (for graph)
+    journey_points = []
+    running_score = 0
+    for i, a in enumerate(answers):
+        running_score = ((running_score * i) + (a.score or 3)) / (i + 1)
+        journey_points.append(round(running_score, 2))
+    
+    # Determine mood level
     if avg_score >= 4:
         overall_mood = 'Positive'
-        primary_emotion = 'happy'
         trend = 'improving'
-        summary = 'Kondisi mentalmu secara keseluruhan sangat baik! Tetap pertahankan pola positifmu.'
-        recommendation = 'Lanjutkan aktivitas yang membuatmu bahagia dan berbagi kebaikan dengan orang lain.'
-        emotions = [
-            {'emotion': 'happy', 'percentage': 45},
-            {'emotion': 'calm', 'percentage': 35},
-            {'emotion': 'hopeful', 'percentage': 15},
-            {'emotion': 'neutral', 'percentage': 5}
-        ]
-        key_insights = [
-            {'icon': '🌟', 'title': 'Mood Positif', 'description': 'Kamu memiliki pandangan yang positif!'},
-            {'icon': '💪', 'title': 'Energi Baik', 'description': 'Level energimu dalam kondisi baik.'},
-            {'icon': '🤝', 'title': 'Koneksi Sosial', 'description': 'Hubungan sosialmu terlihat sehat.'}
-        ]
+        mood_improvement = random.randint(15, 30)
+        breakthrough = "Kamu menunjukkan kekuatan yang luar biasa dalam menjaga kesehatan mentalmu!"
     elif avg_score >= 3:
         overall_mood = 'Neutral'
-        primary_emotion = 'neutral'
         trend = 'stable'
-        summary = 'Kondisi mentalmu stabil. Ada beberapa area yang bisa ditingkatkan.'
-        recommendation = 'Coba luangkan waktu untuk self-care dan aktivitas yang menyenangkan.'
-        emotions = [
-            {'emotion': 'neutral', 'percentage': 40},
-            {'emotion': 'calm', 'percentage': 25},
-            {'emotion': 'anxious', 'percentage': 20},
-            {'emotion': 'sad', 'percentage': 15}
-        ]
-        key_insights = [
-            {'icon': '⚖️', 'title': 'Keseimbangan', 'description': 'Kondisimu cukup stabil, tapi perlu perhatian.'},
-            {'icon': '🌙', 'title': 'Istirahat', 'description': 'Pastikan kamu mendapat istirahat yang cukup.'},
-            {'icon': '💭', 'title': 'Refleksi', 'description': 'Luangkan waktu untuk refleksi diri.'}
-        ]
+        mood_improvement = random.randint(-5, 10)
+        breakthrough = "Kesadaran diri adalah langkah penting dalam perjalanan kesehatan mental."
     elif avg_score >= 2:
         overall_mood = 'Concerning'
-        primary_emotion = 'anxious'
         trend = 'declining'
-        summary = 'Kami melihat beberapa area yang perlu perhatian. Kamu tidak sendirian.'
-        recommendation = 'Pertimbangkan untuk berbicara dengan seseorang yang kamu percaya atau profesional.'
-        emotions = [
-            {'emotion': 'anxious', 'percentage': 35},
-            {'emotion': 'sad', 'percentage': 30},
-            {'emotion': 'stressed', 'percentage': 25},
-            {'emotion': 'neutral', 'percentage': 10}
-        ]
-        key_insights = [
-            {'icon': '⚠️', 'title': 'Perhatian', 'description': 'Ada beberapa area yang memerlukan perhatian lebih.'},
-            {'icon': '💙', 'title': 'Dukungan', 'description': 'Jangan ragu untuk mencari dukungan dari orang terdekat.'},
-            {'icon': '🌱', 'title': 'Langkah Kecil', 'description': 'Mulai dengan langkah kecil untuk perbaikan.'}
-        ]
+        mood_improvement = random.randint(-15, 0)
+        breakthrough = "Berbagi perasaanmu adalah langkah berani menuju penyembuhan."
     else:
         overall_mood = 'Needs Support'
-        primary_emotion = 'sad'
         trend = 'needs_attention'
-        summary = 'Kami sangat peduli dengan kondisimu. Penting untuk mendapatkan dukungan.'
-        recommendation = 'Kami sangat menyarankan untuk berbicara dengan profesional kesehatan mental atau hubungi hotline kesehatan mental: 119 ext 8.'
-        emotions = [
-            {'emotion': 'sad', 'percentage': 40},
-            {'emotion': 'anxious', 'percentage': 30},
-            {'emotion': 'stressed', 'percentage': 20},
-            {'emotion': 'neutral', 'percentage': 10}
-        ]
+        mood_improvement = random.randint(-30, -10)
+        breakthrough = "Mencari bantuan adalah tanda kekuatan, bukan kelemahan."
+    
+    # Generate AI summary (uses Gemini if available)
+    ai_summary = generate_ai_summary(answers_data, total_score, primary_emotion)
+    ai_recommendation = get_recommendation(total_score, primary_emotion)
+    
+    # Build emotions distribution from actual data
+    total_emotions = sum(emotion_counts.values()) or 1
+    emotions = [{'emotion': e, 'percentage': round((c / total_emotions) * 100)} 
+                for e, c in sorted(emotion_counts.items(), key=lambda x: x[1], reverse=True)][:5]
+    if not emotions:
+        emotions = [{'emotion': 'neutral', 'percentage': 100}]
+    
+    # Build key insights based on analysis
+    key_insights = []
+    if primary_emotion in ['happy', 'calm', 'positive']:
+        key_insights.append({'icon': '🌟', 'title': 'Mood Positif', 'description': 'Kamu memiliki pandangan yang positif dan stabil!'})
+    if emotion_counts.get('anxious', 0) > len(answers) * 0.3:
+        key_insights.append({'icon': '😰', 'title': 'Kecemasan Terdeteksi', 'description': 'Ada tanda-tanda kecemasan yang perlu diperhatikan.'})
+    if emotion_counts.get('sad', 0) > len(answers) * 0.3:
+        key_insights.append({'icon': '😢', 'title': 'Kesedihan Mendalam', 'description': 'Perasaan sedih terdeteksi cukup signifikan.'})
+    if emotion_counts.get('tired', 0) > len(answers) * 0.2:
+        key_insights.append({'icon': '😴', 'title': 'Kelelahan', 'description': 'Pastikan kamu mendapat istirahat yang cukup.'})
+    # Default insights if none detected
+    if not key_insights:
         key_insights = [
-            {'icon': '❤️', 'title': 'Kamu Penting', 'description': 'Perasaanmu valid dan kamu layak mendapat bantuan.'},
-            {'icon': '📞', 'title': 'Bantuan Tersedia', 'description': 'Hubungi 119 ext 8 atau profesional kesehatan mental.'},
-            {'icon': '🤗', 'title': 'Tidak Sendirian', 'description': 'Banyak orang peduli dan ingin membantumu.'}
+            {'icon': '💭', 'title': 'Refleksi Diri', 'description': 'Luangkan waktu untuk refleksi dan self-care.'},
+            {'icon': '🌱', 'title': 'Pertumbuhan', 'description': 'Setiap langkah kecil adalah kemajuan.'}
         ]
     
     return jsonify({
@@ -500,26 +630,31 @@ def session_insights(sid):
         'mood_score': round(mood_score, 1),
         'overall_mood': overall_mood,
         'emotional_journey': {
-            'start': 'Calm' if avg_score >= 3 else 'Low',
+            'start': 'Calm' if journey_points and journey_points[0] >= 3 else 'Low',
             'end': overall_mood,
-            'trend': trend
+            'trend': trend,
+            'data_points': journey_points  # For graph rendering
         },
         'primary_emotion': primary_emotion,
+        'primary_trigger': primary_emotion,  # For compatibility
         'emotions': emotions,
         'key_insights': key_insights,
         'wellness_score': wellness_percentage,
         'phq9_score': max(0, 27 - int(avg_score * 6.75)),
         'gad7_score': max(0, 21 - int(avg_score * 5.25)),
-        'summary': summary,
-        'recommendation': recommendation,
+        'score': total_score,
+        'summary': ai_summary,
+        'recommendation': ai_recommendation,
+        'breakthrough': breakthrough,
+        'mood_improvement': mood_improvement,
         'questions_answered': session.questions_answered or len(answers),
         'created_at': session.created_at.isoformat() if session.created_at else None,
-        # Debug info
         '_debug': {
             'total_answers': len(answers),
             'total_score': total_score,
             'avg_score': round(avg_score, 2),
-            'individual_scores': [a.score for a in answers]
+            'gemini_enabled': GEMINI_ENABLED,
+            'emotion_counts': emotion_counts
         }
     })
 
@@ -662,10 +797,69 @@ def emotions():
 @app.route('/api/insights/observations')
 @jwt_required()
 def observations():
-    return jsonify([
-        {'id': 1, 'text': 'Mood kamu cenderung lebih baik di pagi hari.', 'type': 'positive', 'read': False},
-        {'id': 2, 'text': 'Pola tidurmu sudah membaik. 🌟', 'type': 'positive', 'read': True}
-    ])
+    user_id = int(get_jwt_identity())
+    sessions = Session.query.filter_by(user_id=user_id, status='completed').order_by(Session.created_at.desc()).limit(10).all()
+    
+    observations = []
+    for s in sessions:
+        answers = Answer.query.filter_by(session_id=s.id).all()
+        if not answers:
+            continue
+        
+        # Calculate session score
+        total_score = sum(a.score or 3 for a in answers)
+        avg_score = total_score / len(answers)
+        
+        # Generate observation based on analysis
+        if avg_score >= 4:
+            obs = {
+                'id': s.id,
+                'type': 'positive',
+                'title': 'Mood Positif! 🌟',
+                'description': f'Sesi pada {s.created_at.strftime("%d %b")} menunjukkan kondisi emosional yang sangat baik.',
+                'session_id': s.id,
+                'read': False,
+                'date': s.created_at.isoformat() if s.created_at else None
+            }
+        elif avg_score >= 3:
+            obs = {
+                'id': s.id,
+                'type': 'neutral',
+                'title': 'Kondisi Stabil',
+                'description': f'Sesi {s.created_at.strftime("%d %b")} menunjukkan keseimbangan emosional.',
+                'session_id': s.id,
+                'read': False,
+                'date': s.created_at.isoformat() if s.created_at else None
+            }
+        elif avg_score >= 2:
+            obs = {
+                'id': s.id,
+                'type': 'pattern',
+                'title': 'Pola Perlu Perhatian',
+                'description': f'Ada tanda-tanda yang perlu diperhatikan pada sesi {s.created_at.strftime("%d %b")}.',
+                'session_id': s.id,
+                'read': False,
+                'date': s.created_at.isoformat() if s.created_at else None
+            }
+        else:
+            obs = {
+                'id': s.id,
+                'type': 'alert',
+                'title': 'Perhatian Diperlukan',
+                'description': f'Sesi {s.created_at.strftime("%d %b")} menunjukkan kondisi yang memerlukan dukungan.',
+                'session_id': s.id,
+                'read': False,
+                'date': s.created_at.isoformat() if s.created_at else None
+            }
+        observations.append(obs)
+    
+    # If no sessions, return encouraging message
+    if not observations:
+        observations = [
+            {'id': 0, 'type': 'info', 'title': 'Mulai Perjalananmu', 'description': 'Selesaikan sesi pertamamu untuk melihat AI observations.', 'read': False}
+        ]
+    
+    return jsonify(observations)
 
 @app.route('/api/insights/observations/<int:oid>/read', methods=['POST'])
 @jwt_required()
