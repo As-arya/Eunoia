@@ -98,15 +98,18 @@ const PredominantEmotions = ({ period = 'weekly' }) => {
                 {isLoading ? (
                     <div style={{ color: 'var(--text-secondary)' }}>Loading...</div>
                 ) : (
-                    emotions.slice(0, 2).map((item, i) => (
-                        <EmotionCard
-                            key={i}
-                            emoji={emotionEmojis[item.emotion?.toLowerCase()] || '😐'}
-                            label={item.emotion.charAt(0).toUpperCase() + item.emotion.slice(1)}
-                            percentage={item.percentage}
-                            periodLabel={periodLabel}
-                        />
-                    ))
+                    emotions.slice(0, 2).map((item, i) => {
+                        const emotionName = item.emotion || item.name || 'neutral';
+                        return (
+                            <EmotionCard
+                                key={i}
+                                emoji={emotionEmojis[emotionName.toLowerCase()] || '😐'}
+                                label={emotionName.charAt(0).toUpperCase() + emotionName.slice(1)}
+                                percentage={item.percentage || 0}
+                                periodLabel={periodLabel}
+                            />
+                        );
+                    })
                 )}
             </div>
         </div>

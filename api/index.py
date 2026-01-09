@@ -391,11 +391,11 @@ def mood_trend(uid):
 def emotions(uid):
     return jsonify({
         'emotions': [
-            {'name': 'Tenang', 'percentage': 35, 'color': '#4ade80'},
-            {'name': 'Bahagia', 'percentage': 30, 'color': '#fbbf24'},
-            {'name': 'Netral', 'percentage': 20, 'color': '#60a5fa'},
-            {'name': 'Cemas', 'percentage': 10, 'color': '#f87171'},
-            {'name': 'Sedih', 'percentage': 5, 'color': '#a78bfa'}
+            {'emotion': 'calm', 'percentage': 35, 'color': '#4ade80'},
+            {'emotion': 'happy', 'percentage': 30, 'color': '#fbbf24'},
+            {'emotion': 'neutral', 'percentage': 20, 'color': '#60a5fa'},
+            {'emotion': 'anxious', 'percentage': 10, 'color': '#f87171'},
+            {'emotion': 'sad', 'percentage': 5, 'color': '#a78bfa'}
         ],
         'period': 'weekly'
     })
