@@ -579,8 +579,16 @@ def session_insights(sid):
                 'a': opt.get('text', '') if opt else '',
                 'score': a.score
             })
-            # Track emotions based on score
-            emotion = 'sad' if (a.score or 3) <= 2 else 'happy' if (a.score or 3) >= 4 else 'neutral'
+            # Track emotions based on score - more granular categories
+            score = a.score or 3
+            if score >= 4:
+                emotion = 'happy'
+            elif score == 3:
+                emotion = 'neutral'
+            elif score == 2:
+                emotion = 'anxious'
+            else:  # score 1
+                emotion = 'sad'
             emotion_counts[emotion] = emotion_counts.get(emotion, 0) + 1
     
     # Calculate scores
@@ -639,17 +647,38 @@ def session_insights(sid):
     if not emotions:
         emotions = [{'emotion': 'neutral', 'percentage': 100}]
     
-    # Build key insights based on analysis
+    # Build key insights based on analysis - use avg_score for consistency
     key_insights = []
-    if primary_emotion in ['happy', 'calm', 'positive']:
+    num_answers = len(answers) or 1
+    
+    # Only show positive insight if truly positive (avg >= 4)
+    if avg_score >= 4:
         key_insights.append({'icon': '🌟', 'title': 'Mood Positif', 'description': 'Kamu memiliki pandangan yang positif dan stabil!'})
-    if emotion_counts.get('anxious', 0) > len(answers) * 0.3:
-        key_insights.append({'icon': '😰', 'title': 'Kecemasan Terdeteksi', 'description': 'Ada tanda-tanda kecemasan yang perlu diperhatikan.'})
-    if emotion_counts.get('sad', 0) > len(answers) * 0.3:
-        key_insights.append({'icon': '😢', 'title': 'Kesedihan Mendalam', 'description': 'Perasaan sedih terdeteksi cukup signifikan.'})
-    if emotion_counts.get('tired', 0) > len(answers) * 0.2:
-        key_insights.append({'icon': '😴', 'title': 'Kelelahan', 'description': 'Pastikan kamu mendapat istirahat yang cukup.'})
-    # Default insights if none detected
+    
+    # Detect anxiety patterns (score 2 answers)
+    anxious_count = emotion_counts.get('anxious', 0)
+    if anxious_count / num_answers >= 0.2:
+        key_insights.append({'icon': '😰', 'title': 'Kecemasan Terdeteksi', 'description': f'{int(anxious_count/num_answers*100)}% respons menunjukkan tanda-tanda kecemasan.'})
+    
+    # Detect sadness patterns (score 1 answers)
+    sad_count = emotion_counts.get('sad', 0)
+    if sad_count / num_answers >= 0.2:
+        key_insights.append({'icon': '😢', 'title': 'Kesedihan Mendalam', 'description': f'{int(sad_count/num_answers*100)}% respons menunjukkan perasaan sedih yang signifikan.'})
+    
+    # Detect stress/burden if multiple low scores
+    low_score_ratio = (sad_count + anxious_count) / num_answers
+    if low_score_ratio >= 0.4:
+        key_insights.append({'icon': '💜', 'title': 'Beban Emosional', 'description': 'Ada tekanan emosional yang cukup besar. Pertimbangkan berbicara dengan seseorang.'})
+    
+    # Neutral/balanced state
+    if avg_score >= 2.5 and avg_score < 4 and not key_insights:
+        key_insights.append({'icon': '⚖️', 'title': 'Kondisi Campuran', 'description': 'Ada variasi emosi yang wajar. Perhatikan pola yang muncul.'})
+    
+    # Critical state
+    if avg_score < 2:
+        key_insights.append({'icon': '❤️', 'title': 'Perlu Dukungan', 'description': 'Perasaanmu valid. Jangan ragu menghubungi profesional: 119 ext 8.'})
+    
+    # Default if still empty
     if not key_insights:
         key_insights = [
             {'icon': '💭', 'title': 'Refleksi Diri', 'description': 'Luangkan waktu untuk refleksi dan self-care.'},
