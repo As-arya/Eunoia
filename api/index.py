@@ -873,66 +873,135 @@ def observations():
     sessions = Session.query.filter_by(user_id=user_id, status='completed').order_by(Session.created_at.desc()).limit(10).all()
     
     obs_list = []
+    
+    # Aggregate data for pattern analysis
+    all_scores = []
+    emotion_patterns = {'happy': 0, 'neutral': 0, 'sad': 0, 'anxious': 0}
+    sessions_with_low_scores = 0
+    sessions_with_high_scores = 0
+    
     for s in sessions:
-        # Try to get score from answers first, fallback to session mood_score
         answers = Answer.query.filter_by(session_id=s.id).all()
         if answers:
             total_score = sum(a.score or 3 for a in answers)
             avg_score = total_score / len(answers)
-        else:
-            # Fallback to session mood_score (scale 0-10, convert to 1-5)
-            avg_score = (s.mood_score or 5) / 2
-        
-        # Generate observation based on score
-        if avg_score >= 4:
-            obs = {
-                'id': s.id,
-                'type': 'positive',
-                'title': 'Mood Positif! 🌟',
-                'description': f'Sesi pada {s.created_at.strftime("%d %b")} menunjukkan kondisi emosional yang sangat baik.',
-                'session_id': s.id,
-                'read': False,
-                'date': s.created_at.isoformat() if s.created_at else None
-            }
-        elif avg_score >= 3:
-            obs = {
-                'id': s.id,
-                'type': 'neutral',
-                'title': 'Kondisi Stabil ⚖️',
-                'description': f'Sesi {s.created_at.strftime("%d %b")} menunjukkan keseimbangan emosional.',
-                'session_id': s.id,
-                'read': False,
-                'date': s.created_at.isoformat() if s.created_at else None
-            }
-        elif avg_score >= 2:
-            obs = {
-                'id': s.id,
-                'type': 'pattern',
-                'title': 'Pola Perlu Perhatian 💭',
-                'description': f'Ada tanda-tanda yang perlu diperhatikan pada sesi {s.created_at.strftime("%d %b")}.',
-                'session_id': s.id,
-                'read': False,
-                'date': s.created_at.isoformat() if s.created_at else None
-            }
-        else:
-            obs = {
-                'id': s.id,
-                'type': 'alert',
-                'title': 'Perhatian Diperlukan 💙',
-                'description': f'Sesi {s.created_at.strftime("%d %b")} menunjukkan kondisi yang memerlukan dukungan.',
-                'session_id': s.id,
-                'read': False,
-                'date': s.created_at.isoformat() if s.created_at else None
-            }
-        obs_list.append(obs)
+            all_scores.append(avg_score)
+            
+            # Categorize emotions
+            for a in answers:
+                score = a.score or 3
+                if score >= 4:
+                    emotion_patterns['happy'] += 1
+                elif score >= 3:
+                    emotion_patterns['neutral'] += 1
+                elif score >= 2:
+                    emotion_patterns['anxious'] += 1
+                else:
+                    emotion_patterns['sad'] += 1
+            
+            if avg_score >= 4:
+                sessions_with_high_scores += 1
+            elif avg_score < 2.5:
+                sessions_with_low_scores += 1
     
-    # If no sessions at all, return encouraging message
+    total_emotions = sum(emotion_patterns.values()) or 1
+    
+    # Generate analytical observations based on patterns
+    if len(all_scores) >= 2:
+        # Trend analysis
+        recent_avg = sum(all_scores[:3]) / min(3, len(all_scores))
+        older_avg = sum(all_scores[3:]) / max(1, len(all_scores) - 3) if len(all_scores) > 3 else recent_avg
+        
+        if recent_avg > older_avg + 0.5:
+            obs_list.append({
+                'id': 1001,
+                'type': 'positive',
+                'title': 'Tren Mood Membaik! 📈',
+                'description': f'Analisis menunjukkan mood kamu meningkat dalam sesi-sesi terakhir. Skor rata-rata naik dari {older_avg:.1f} ke {recent_avg:.1f}. Terus pertahankan kebiasaan positif yang sudah kamu bangun!',
+                'read': False,
+                'date': datetime.now().isoformat()
+            })
+        elif recent_avg < older_avg - 0.5:
+            obs_list.append({
+                'id': 1002,
+                'type': 'pattern',
+                'title': 'Perubahan Pola Terdeteksi 📉',
+                'description': f'Kami melihat sedikit penurunan skor dari {older_avg:.1f} ke {recent_avg:.1f} dalam sesi terakhir. Ini bukan hal yang perlu dikhawatirkan, tapi mungkin saatnya untuk lebih memperhatikan self-care.',
+                'read': False,
+                'date': datetime.now().isoformat()
+            })
+    
+    # Emotion pattern analysis
+    if emotion_patterns['anxious'] / total_emotions > 0.3:
+        obs_list.append({
+            'id': 1003,
+            'type': 'pattern',
+            'title': 'Pola Kecemasan Terdeteksi 💭',
+            'description': f"Sekitar {int(emotion_patterns['anxious']/total_emotions*100)}% respons menunjukkan tanda kecemasan. Coba teknik pernapasan 4-7-8 atau aktivitas grounding ketika merasa cemas.",
+            'read': False,
+            'date': datetime.now().isoformat()
+        })
+    
+    if emotion_patterns['sad'] / total_emotions > 0.25:
+        obs_list.append({
+            'id': 1004,
+            'type': 'emotion',
+            'title': 'Kesedihan Terdeteksi 💙',
+            'description': f"Kami melihat {int(emotion_patterns['sad']/total_emotions*100)}% respons menunjukkan perasaan sedih. Jangan ragu untuk berbicara dengan seseorang yang kamu percaya atau hubungi profesional jika diperlukan.",
+            'read': False,
+            'date': datetime.now().isoformat()
+        })
+    
+    if sessions_with_high_scores >= 2:
+        obs_list.append({
+            'id': 1005,
+            'type': 'positive',
+            'title': 'Konsistensi Positif! 🌟',
+            'description': f'{sessions_with_high_scores} dari {len(sessions)} sesi menunjukkan mood positif. Kamu memiliki kemampuan yang baik dalam menjaga kesehatan mental. Pertahankan rutinitas yang membuat kamu bahagia!',
+            'read': False,
+            'date': datetime.now().isoformat()
+        })
+    
+    if emotion_patterns['happy'] / total_emotions > 0.4:
+        obs_list.append({
+            'id': 1006,
+            'type': 'insight',
+            'title': 'Stabilitas Emosional 💪',
+            'description': f"Mayoritas respons ({int(emotion_patterns['happy']/total_emotions*100)}%) menunjukkan kondisi emosional yang stabil dan positif. Ini menandakan kekuatan resiliensi yang baik.",
+            'read': False,
+            'date': datetime.now().isoformat()
+        })
+    
+    # If we have sessions but no pattern observations, add session-specific ones
+    if not obs_list and sessions:
+        for s in sessions[:3]:
+            answers = Answer.query.filter_by(session_id=s.id).all()
+            avg_score = sum(a.score or 3 for a in answers) / len(answers) if answers else 3
+            
+            if avg_score >= 4:
+                desc = f"Sesi ini menunjukkan mood yang sangat baik dengan skor {avg_score:.1f}/5. Kamu berhasil mempertahankan kondisi emosional yang positif."
+            elif avg_score >= 3:
+                desc = f"Kondisi emosional stabil dengan skor {avg_score:.1f}/5. Luangkan waktu untuk aktivitas yang membuat kamu rileks."
+            else:
+                desc = f"Sesi ini menunjukkan tantangan dengan skor {avg_score:.1f}/5. Ingat bahwa perasaan ini valid dan bantuan tersedia untukmu."
+            
+            obs_list.append({
+                'id': s.id,
+                'type': 'insight' if avg_score >= 3 else 'pattern',
+                'title': f"Analisis Sesi {s.created_at.strftime('%d %b')} 📊",
+                'description': desc,
+                'session_id': s.id,
+                'read': False,
+                'date': s.created_at.isoformat() if s.created_at else None
+            })
+    
+    # If no sessions at all
     if not obs_list:
         obs_list = [
-            {'id': 0, 'type': 'info', 'title': 'Mulai Perjalananmu 🌱', 'description': 'Selesaikan sesi pertamamu untuk melihat AI observations.', 'read': False}
+            {'id': 0, 'type': 'info', 'title': 'Mulai Perjalananmu 🌱', 'description': 'Selesaikan beberapa sesi screening untuk melihat analisis AI yang mendalam tentang pola emosionalmu.', 'read': False}
         ]
     
-    return jsonify(obs_list)
+    return jsonify(obs_list[:5])  # Return max 5 observations
 
 @app.route('/api/insights/observations/<int:oid>/read', methods=['POST'])
 @jwt_required()
