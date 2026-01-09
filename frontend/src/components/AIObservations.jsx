@@ -49,8 +49,8 @@ const getObservationIcon = (type) => {
 const AIObservations = () => {
     const { data, isLoading } = useObservations({ limit: 3 })
 
-    // Use real data - no demo fallback, show empty state instead
-    const observations = data?.observations || []
+    // API returns array directly, not {observations: [...]}
+    const observations = Array.isArray(data) ? data : (data?.observations || [])
 
     return (
         <div>
