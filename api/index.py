@@ -15,8 +15,23 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, create_access_token, create_refresh_token
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import random
+
+# Indonesia timezone (WIB = UTC+7)
+WIB = timezone(timedelta(hours=7))
+
+def get_wib_now():
+    """Get current time in Indonesia timezone"""
+    return datetime.now(WIB)
+
+def utc_to_wib(dt):
+    """Convert UTC datetime to WIB"""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(WIB)
 
 # Create Flask app
 app = Flask(__name__)
@@ -90,15 +105,18 @@ class Session(db.Model):
         else:
             mood = 'sad'
         
+        # Convert to WIB timezone
+        created_wib = utc_to_wib(self.created_at)
+        
         return {
             'id': self.id,
-            'title': self.title or f'Sesi {self.created_at.strftime("%d %b %Y") if self.created_at else ""}',
+            'title': self.title or f'Sesi {created_wib.strftime("%d %b %Y") if created_wib else ""}',
             'status': self.status,
             'mood': mood,
             'mood_score': self.mood_score,
             'primary_emotion': self.primary_emotion or mood,
             'questions_answered': self.questions_answered,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'created_at': created_wib.isoformat() if created_wib else None,
             'summary': 'Chat conversation'
         }
 
